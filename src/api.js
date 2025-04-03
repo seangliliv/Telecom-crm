@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 
 // Create an Axios instance with your backend base URL
 const API = axios.get({
-  baseURL: "http://45.150.128.165:8000/api/customers", // Adjust the URL as
+  baseURL: "http://45.150.128.165:8000/api", // Adjust the URL as
   headers: {
     "Content-Type": "application/json",
     "4": "24ad193a650d5a824asdasdfsa9d84ffasdfasdf212ab43993"

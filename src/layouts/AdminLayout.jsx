@@ -30,11 +30,11 @@ const AdminLayout = () => {
           <ul className="space-y-1">
             <NavItem to="/admin/dashboard" icon={<LayoutDashboard />} label="Dashboard" />
             <NavItem to="/admin/customers" icon={<Users />} label="Customers Management" />
-            <NavItem to="/admin/subscriptions" icon={<CreditCard />} label="Subscription & Billing" />
+            <NavItem to="/admin/subscription" icon={<CreditCard />} label="Subscription & Billing" />
             <NavItem to="/admin/invoices" icon={<FileText />} label="Invoices" />
             <NavItem to="/admin/support" icon={<HeadphonesIcon />} label="Support Tickets" />
             <NavItem to="/admin/sales" icon={<TrendingUp />} label="Sales & Marketing" />
-            <NavItem to="/admin/services" icon={<Settings />} label="Services Management" />
+            <NavItem to="/admin/plans" icon={<Settings />} label="Plans Management" />
             <NavItem to="/admin/network" icon={<Network />} label="Network Status" />
             <NavItem to="/admin/users" icon={<UserCog />} label="User & Roles" />
             <NavItem to="/admin/settings" icon={<Settings />} label="Settings" />

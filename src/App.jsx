@@ -14,7 +14,7 @@ import CustomersManagement from "./pages/admin/CustomersManagement";
 import Invoice from "./pages/admin/Invoice";
 import NetworkStatus from "./pages/admin/NetworkStatus";
 import SalesMarketing from "./pages/admin/SalesMarketing";
-import ServicesManagement from "./pages/admin/ServicesManagement";
+import PlansManagement from "./pages/admin/PlansManagement";
 import SubscriptionBilling from "./pages/admin/SubscriptionBilling";
 import UserAndRole from "./pages/admin/UserAndRole";
 import UserDashboard from "./pages/user/UserDashboard";
@@ -22,6 +22,7 @@ import UserBilling from "./pages/user/UserBilling";
 import UserSupportCenter from "./pages/user/UserSupportCenter";
 import UserServices from "./pages/user/UserServices";
 import UserReports from "./pages/user/UserReports";
+import SupportTickets from "./pages/admin/SupportTickets";
 
 const App = () => {
   // For simplicity, assume role is stored in localStorage
@@ -44,12 +45,13 @@ const App = () => {
         >
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="customers" element={<CustomersManagement />} />
-          <Route path="invoice" element={<Invoice />} />
+          <Route path="invoices" element={<Invoice />} />
+          <Route path="support" element={<SupportTickets />} />
           <Route path="network" element={<NetworkStatus />} />
           <Route path="sales" element={<SalesMarketing />} />
-          <Route path="services" element={<ServicesManagement />} />
+          <Route path="plans" element={<PlansManagement />} />
           <Route path="subscription" element={<SubscriptionBilling />} />
-          <Route path="userrole" element={<UserAndRole />} />
+          <Route path="users" element={<UserAndRole />} />
         </Route>
         {/* User Routes */}
         <Route

@@ -19,7 +19,7 @@ const CustomersManagement = () => {
 
   const getPlans = async () => {
     try {
-      const resp = await axios.get("http://45.150.128.165:8000/api/categories/", {
+      const resp = await axios.get("http://45.150.128.165:8000/api/plans/", {
         headers: {
           token: "24ad193a650d5a824asdasdfsa9d84ffasdfasdf212ab43993",
         },
