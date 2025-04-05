@@ -1,7 +1,6 @@
 import React from 'react';
 import { BarChart3, Users, CreditCard, Clock, TrendingUp, AlertTriangle, UserPlus, WifiOff, DollarSign } from 'lucide-react';
-import plansApi from '../../services/plansApi';
-import axios from "axios";
+ 
 
 const AdminDashboard = () => {
   return (
