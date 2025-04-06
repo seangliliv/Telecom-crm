@@ -14,8 +14,7 @@ import {
   DollarSign,
   RefreshCw
 } from 'lucide-react';
-import plansApi from '../../services/plansApi';
-import axios from "axios";
+import { fetchPlans, createPlan as createPlanApi, updatePlan as updatePlanApi, deletePlan as deletePlanApi } from '../../allApi'; // Updated imports
 
 const PlansManagement = () => {
   const [plans, setPlans] = useState([]);
@@ -47,19 +46,14 @@ const PlansManagement = () => {
     averagePrice: 0
   });
  
-
   // Fetch plans data
   const getPlans = async () => {
     try {
       setLoading(true); // Set loading state at the beginning
-      const resp = await axios.get("http://45.150.128.165:8000/api/plans/", {
-        headers: {
-          token: "24ad193a650d5a824asdasdfsa9d84ffasdfasdf212ab43993",
-        },
-      });
-      console.log("Plans data received:", resp.data);
-      setPlans(resp.data);
-      updateStats(resp.data);
+      const data = await fetchPlans(); // Using the fetchPlans function from allapi.js
+      console.log("Plans data received:", data);
+      setPlans(data);
+      updateStats(data);
       setLoading(false); // Turn off loading after data is processed
       setError(null); // Clear any previous errors
     } catch (error) {
@@ -68,8 +62,6 @@ const PlansManagement = () => {
       setLoading(false); // Make sure loading is turned off even in case of error
     }
   };
-
- 
 
   // Calculate and update statistics
   const updateStats = (plansData) => {
@@ -91,7 +83,7 @@ const PlansManagement = () => {
   const createPlan = async () => {
     try {
       setLoading(true);
-      await plansApi.createPlan(formData);
+      await createPlanApi(formData);
       setShowAddModal(false);
       resetForm();
       await getPlans();
@@ -106,7 +98,7 @@ const PlansManagement = () => {
   const updatePlan = async () => {
     try {
       setLoading(true);
-      await plansApi.updatePlan(currentPlan.id, formData);
+      await updatePlanApi(currentPlan.id, formData);
       setShowEditModal(false);
       resetForm();
       await getPlans();
@@ -121,7 +113,7 @@ const PlansManagement = () => {
   const deletePlan = async () => {
     try {
       setLoading(true);
-      await plansApi.deletePlan(currentPlan.id);
+      await deletePlanApi(currentPlan.id);
       setShowDeleteModal(false);
       await getPlans();
     } catch (error) {

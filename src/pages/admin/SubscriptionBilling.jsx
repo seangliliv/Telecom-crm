@@ -1,19 +1,131 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { DollarSign, Clipboard, Clock, Users, Plus, RefreshCw, FileText, LayoutGrid, Eye } from 'lucide-react';
+import { fetchInvoices, fetchSubscriptions } from '../../allApi';
 
 const SubscriptionBilling = () => {
-  // Sample recent transactions data
-  const recentTransactions = [
-    { id: 'TRX-789456', type: 'Premium Plan Payment', amount: '$59.99' },
-    { id: 'TRX-789455', type: 'Data Plan Renewal', amount: '$29.99' },
-  ];
+  // State for data and loading
+  const [invoices, setInvoices] = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [stats, setStats] = useState({
+    totalRevenue: 0,
+    activePlans: 0,
+    pendingPayments: 0,
+    newSubscriptions: 0
+  });
 
-  // Sample recent invoices data
-  const recentInvoices = [
-    { id: 'INV-001234', customer: 'Sophea Chan', plan: 'Premium Monthly', amount: '$59.99', status: 'Paid' },
-    { id: 'INV-001233', customer: 'Dara Sok', plan: 'Basic Annual', amount: '$199.99', status: 'Pending' },
-    { id: 'INV-001232', customer: 'Bopha Kim', plan: 'Data Plus', amount: '$39.99', status: 'Overdue' },
-  ];
+  // Fetch data from API
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch invoices and subscriptions concurrently
+      let invoicesData = [];
+      let subscriptionsData = [];
+      
+      try {
+        invoicesData = await fetchInvoices();
+        console.log("Invoices data:", invoicesData);
+      } catch (invoiceError) {
+        console.error("Error fetching invoices:", invoiceError);
+        invoicesData = [];
+      }
+      
+      try {
+        subscriptionsData = await fetchSubscriptions();
+        console.log("Subscriptions data:", subscriptionsData);
+      } catch (subscriptionError) {
+        console.error("Error fetching subscriptions:", subscriptionError);
+        subscriptionsData = [];
+      }
+      
+      // Ensure we have arrays
+      invoicesData = Array.isArray(invoicesData) ? invoicesData : [];
+      subscriptionsData = Array.isArray(subscriptionsData) ? subscriptionsData : [];
+      
+      // Update state with fetched data
+      setInvoices(invoicesData);
+      setSubscriptions(subscriptionsData);
+      
+      // Generate transactions from the latest invoices
+      const recentTransactions = invoicesData
+        .slice(0, 5)
+        .map(invoice => ({
+          id: invoice.id || `INV-${Math.floor(Math.random() * 1000000)}`,
+          type: invoice.description || 'Plan Payment',
+          amount: `${invoice.amount || 0}`
+        }));
+        
+      setTransactions(recentTransactions);
+      
+      // Calculate statistics
+      calculateStats(invoicesData, subscriptionsData);
+      
+      setLoading(false);
+      setError(null);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setError(`Failed to fetch data: ${error.message}`);
+      setLoading(false);
+    }
+  };
+  
+  // Calculate statistics based on fetched data
+  const calculateStats = (invoicesData, subscriptionsData) => {
+    // Default values in case data is empty
+    let stats = {
+      totalRevenue: 0,
+      activePlans: 0,
+      pendingPayments: 0,
+      newSubscriptions: 0
+    };
+    
+    // Ensure data arrays exist
+    const safeInvoicesData = Array.isArray(invoicesData) ? invoicesData : [];
+    const safeSubscriptionsData = Array.isArray(subscriptionsData) ? subscriptionsData : [];
+    
+    if (safeInvoicesData.length > 0) {
+      // Calculate total revenue from all invoices
+      stats.totalRevenue = safeInvoicesData.reduce((sum, invoice) => 
+        sum + (parseFloat(invoice.amount) || 0), 0);
+        
+      // Count pending payments
+      stats.pendingPayments = safeInvoicesData.filter(
+        invoice => invoice.status === "Pending" || invoice.status === "Overdue"
+      ).length;
+    }
+    
+    if (safeSubscriptionsData.length > 0) {
+      // Count active plans
+      stats.activePlans = safeSubscriptionsData.filter(
+        sub => sub.status === "Active" || sub.status === "1"
+      ).length;
+      
+      // Count new subscriptions (created in the last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      stats.newSubscriptions = safeSubscriptionsData.filter(sub => {
+        if (!sub.createdAt) return false;
+        const createdDate = new Date(sub.createdAt);
+        return createdDate >= thirtyDaysAgo;
+      }).length;
+    }
+    
+    setStats({
+      totalRevenue: `$${stats.totalRevenue.toFixed(2)}`,
+      activePlans: stats.activePlans,
+      pendingPayments: stats.pendingPayments,
+      newSubscriptions: stats.newSubscriptions
+    });
+  };
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   return (
     <div className="p-6">
@@ -24,10 +136,13 @@ const SubscriptionBilling = () => {
           <p className="text-gray-600">Manage customer subscriptions and payments</p>
         </div>
         <div className="flex items-center space-x-2">
-          <button className="bg-gray-200 rounded-full p-2">
-            <Globe className="h-5 w-5 text-gray-600" />
+          <button 
+            onClick={fetchData}
+            className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md flex items-center"
+          >
+            <RefreshCw className="h-5 w-5 mr-2" />
+            Refresh
           </button>
-          <span>EN</span>
           <div className="relative ml-4">
             <Bell className="h-6 w-6 text-gray-600" />
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
@@ -40,11 +155,29 @@ const SubscriptionBilling = () => {
         </div>
       </div>
 
+      {/* Error message display */}
+      {error && (
+        <div className="mb-4 bg-yellow-50 border-l-4 border-yellow-400 p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                {error}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <StatCard 
           title="Total Revenue" 
-          value="$124,563" 
+          value={loading ? "Loading..." : stats.totalRevenue} 
           icon={<DollarSign className="h-6 w-6 text-green-500" />}
           subtitle="+12.5% from last month"
           subtitleColor="text-green-500"
@@ -52,7 +185,7 @@ const SubscriptionBilling = () => {
         
         <StatCard 
           title="Active Plans" 
-          value="1,234" 
+          value={loading ? "Loading..." : stats.activePlans} 
           icon={<Clipboard className="h-6 w-6 text-blue-500" />}
           subtitle="85% retention rate"
           subtitleColor="text-blue-500"
@@ -60,7 +193,7 @@ const SubscriptionBilling = () => {
         
         <StatCard 
           title="Pending Payments" 
-          value="45" 
+          value={loading ? "Loading..." : stats.pendingPayments} 
           icon={<Clock className="h-6 w-6 text-yellow-500" />}
           subtitle="Due within 7 days"
           subtitleColor="text-yellow-500"
@@ -68,7 +201,7 @@ const SubscriptionBilling = () => {
         
         <StatCard 
           title="New Subscriptions" 
-          value="89" 
+          value={loading ? "Loading..." : stats.newSubscriptions} 
           icon={<Users className="h-6 w-6 text-purple-500" />}
           subtitle="This month"
           subtitleColor="text-purple-500"
@@ -107,92 +240,110 @@ const SubscriptionBilling = () => {
         {/* Recent Transactions */}
         <div className="bg-white rounded-lg shadow p-4">
           <h2 className="text-lg font-semibold mb-4">Recent Transactions</h2>
-          <div className="space-y-4">
-            {recentTransactions.map((transaction, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="bg-green-100 p-2 rounded-full mr-3">
-                    <DollarSign className="h-5 w-5 text-green-500" />
+          {loading ? (
+            <div className="py-4 flex justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : transactions.length > 0 ? (
+            <div className="space-y-4">
+              {transactions.map((transaction, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="bg-green-100 p-2 rounded-full mr-3">
+                      <DollarSign className="h-5 w-5 text-green-500" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{transaction.type}</p>
+                      <p className="text-sm text-gray-500">ID: {transaction.id}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">{transaction.type}</p>
-                    <p className="text-sm text-gray-500">ID: {transaction.id}</p>
-                  </div>
+                  <div className="text-lg font-bold">{transaction.amount}</div>
                 </div>
-                <div className="text-lg font-bold">{transaction.amount}</div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-4">No recent transactions found</p>
+          )}
         </div>
       </div>
 
       {/* Recent Invoices */}
       <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
         <h2 className="text-lg font-semibold p-4 border-b">Recent Invoices</h2>
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Invoice ID
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Customer
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Plan
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Amount
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {recentInvoices.map((invoice, index) => (
-              <tr key={index}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {invoice.id}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {invoice.customer}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {invoice.plan}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  {invoice.amount}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <StatusBadge status={invoice.status} />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-center">
-                  <button className="text-blue-600 hover:text-blue-900">
-                    <Eye className="h-5 w-5" />
-                  </button>
-                </td>
+        {loading ? (
+          <div className="py-8 flex justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        ) : invoices.length > 0 ? (
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Invoice ID
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Customer
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Plan
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Amount
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {invoices.slice(0, 5).map((invoice, index) => (
+                <tr key={index}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {invoice.id || `INV-${index + 1000}`}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {invoice.customer || invoice.customerName || "Customer"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {invoice.plan || invoice.planName || "Standard Plan"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    ${invoice.amount || 0}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <StatusBadge status={invoice.status || "Pending"} />
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <button className="text-blue-600 hover:text-blue-900">
+                      <Eye className="h-5 w-5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <div className="py-8 text-center text-gray-500">No invoices found</div>
+        )}
         
         {/* Pagination */}
-        <div className="px-6 py-4 flex items-center justify-between border-t border-gray-200">
-          <div className="text-sm text-gray-500">
-            Showing 1 to 3 of 24 entries
+        {invoices.length > 0 && (
+          <div className="px-6 py-4 flex items-center justify-between border-t border-gray-200">
+            <div className="text-sm text-gray-500">
+              Showing 1 to {Math.min(5, invoices.length)} of {invoices.length} entries
+            </div>
+            <div className="flex space-x-2">
+              <PaginationButton label="Previous" active={false} />
+              <PaginationButton label="1" active={true} />
+              <PaginationButton label="2" active={false} />
+              <PaginationButton label="3" active={false} />
+              <PaginationButton label="Next" active={false} />
+            </div>
           </div>
-          <div className="flex space-x-2">
-            <PaginationButton label="Previous" active={false} />
-            <PaginationButton label="1" active={true} />
-            <PaginationButton label="2" active={false} />
-            <PaginationButton label="3" active={false} />
-            <PaginationButton label="Next" active={false} />
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -203,12 +354,15 @@ const StatusBadge = ({ status }) => {
   let color = '';
   switch (status) {
     case 'Paid':
+    case 'Completed':
       color = 'bg-green-100 text-green-800';
       break;
     case 'Pending':
+    case 'Processing':
       color = 'bg-yellow-100 text-yellow-800';
       break;
     case 'Overdue':
+    case 'Failed':
       color = 'bg-red-100 text-red-800';
       break;
     default:

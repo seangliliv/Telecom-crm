@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from "react";
+//src/pages/admin/customersmanagement.jsx
+import { useEffect, useState } from "react";
 import { Edit, Trash2, MoreVertical, Plus, Filter } from "lucide-react";
-import axios from "axios";
 import CustomerModal from "../../components/CustomerModal";
 import EditCustomerModal from "../../components/EditCustomerModal";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 
-const CustomersManagement = () => {
-  const [Client, setClient] = useState([]);
-  const [Plans, setPlans] = useState([]);
-  const [Cats, setCats] = useState([]);
+import {
+  getCustomers,
+  createCustomer,
+  updateCustomer,
+  deleteCustomer,
+} from "../../api/customerService";
+
+function CustomersManagement() {
+  const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -17,101 +22,81 @@ const CustomersManagement = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
 
-  const getPlans = async () => {
-    try {
-      const resp = await axios.get("http://45.150.128.165:8000/api/plans/", {
-        headers: {
-          token: "24ad193a650d5a824asdasdfsa9d84ffasdfasdf212ab43993",
-        },
-      });
-      console.log(resp.data);
-      setPlans(resp.data);
-    } catch (error) {
-      console.error("Error fetching plans:", error);
-    }
-  };
-  
-  const getCats = async () => {
-    try {
-      const resp = await axios.get("http://45.150.128.165:8000/api/categories/", {
-        headers: {
-          token: "24ad193a650d5a824asdasdfsa9d84ffasdfasdf212ab43993",
-        },
-      });
-      console.log(resp.data);
-      setCats(resp.data);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
-
-  const getClient = async () => {
-    setLoading(true);
-    try {
-      const resp = await axios.get("http://45.150.128.165:8000/api/customers/", {
-        headers: {
-          token: "24ad193a650d5a824asdasdfsa9d84ffasdfasdf212ab43993",
-        },
-      });
-      console.log("API Response:", resp.data);
-      
-      // Log the first customer object to inspect its structure
-      if (resp.data && resp.data.length > 0) {
-        console.log("First customer object structure:", resp.data[0]);
-      }
-      
-      setClient(resp.data);
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching clients:", error);
-      setError("Failed to load customers. Please try again later.");
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    getClient();
-    getPlans();
-    getCats();
+    loadCustomers();
   }, []);
 
-  // Filter customers based on search term
-  const filteredCustomers = searchTerm 
-    ? Client.filter(customer => {
-        const fullName = `${customer.firstName || ''} ${customer.lastName || ''}`.trim().toLowerCase();
-        return fullName.includes(searchTerm.toLowerCase()) ||
-          (customer.email && customer.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (customer.phone && customer.phone.toLowerCase().includes(searchTerm.toLowerCase()));
-      })
-    : Client;
+  const loadCustomers = async () => {
+    try {
+      setLoading(true);
+      const response = await getCustomers();
+      setCustomers(response.data);
+      setError(null);
+    } catch (err) {
+      // Check specifically for authentication errors
+      if (err.response && err.response.status === 401) {
+        setError("Authentication failed. Your session may have expired. Please contact system administrator.");
+      } else {
+        setError("Failed to load customers. Please try again later.");
+      }
+      console.error("Error loading customers:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Handler functions for CRUD operations
-  const handleAddCustomer = (newCustomer) => {
-    // Add the new customer to the Client state
-    setClient([...Client, newCustomer]);
+  const handleAddCustomer = async (customerData) => {
+    try {
+      await createCustomer(customerData);
+      setIsModalOpen(false);
+      loadCustomers();
+    } catch (err) {
+      console.error("Error adding customer:", err);
+      setError("Failed to add customer. Please try again.");
+    }
   };
-  
-  const handleEditCustomer = (updatedCustomer) => {
-    // Update the customer in the Client state
-    setClient(Client.map(customer => 
-      customer.id === updatedCustomer.id ? updatedCustomer : customer
-    ));
+
+  const handleEditCustomer = async (id, customerData) => {
+    try {
+      await updateCustomer(id, customerData);
+      setIsEditModalOpen(false);
+      loadCustomers();
+    } catch (err) {
+      console.error("Error updating customer:", err);
+      setError("Failed to update customer. Please try again.");
+    }
   };
-  
-  const handleDeleteCustomer = (customerId) => {
-    // Remove the customer from the Client state
-    setClient(Client.filter(customer => customer.id !== customerId));
+
+  const handleDeleteCustomer = async (id) => {
+    try {
+      await deleteCustomer(id);
+      setIsDeleteModalOpen(false);
+      loadCustomers();
+    } catch (err) {
+      console.error("Error deleting customer:", err);
+      setError("Failed to delete customer. Please try again.");
+    }
   };
-  
+
   const openEditModal = (customer) => {
     setSelectedCustomer(customer);
     setIsEditModalOpen(true);
   };
-  
+
   const openDeleteModal = (customer) => {
     setSelectedCustomer(customer);
     setIsDeleteModalOpen(true);
   };
+
+  // Filter customers based on search term
+  const filteredCustomers = customers.filter((customer) => {
+    const fullName = `${customer.firstName || ""} ${customer.lastName || ""}`.toLowerCase();
+    const email = (customer.email || "").toLowerCase();
+    const phone = (customer.phone || "").toLowerCase();
+    const search = searchTerm.toLowerCase();
+    
+    return fullName.includes(search) || email.includes(search) || phone.includes(search);
+  });
 
   if (loading) {
     return (
@@ -146,7 +131,7 @@ const CustomersManagement = () => {
           </p>
         </div>
         <div className="flex items-center">
-          <button 
+          <button
             className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center"
             onClick={() => setIsModalOpen(true)}
           >
@@ -200,7 +185,9 @@ const CustomersManagement = () => {
         <h2 className="text-lg font-semibold p-4 border-b">Customer List</h2>
         {filteredCustomers.length === 0 ? (
           <div className="p-6 text-center text-gray-500">
-            {searchTerm ? "No customers matching your search" : "No customers found in the database"}
+            {searchTerm
+              ? "No customers matching your search"
+              : "No customers found in the database"}
           </div>
         ) : (
           <table className="min-w-full divide-y divide-gray-200">
@@ -245,17 +232,19 @@ const CustomersManagement = () => {
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
                         <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
-                          {customer.firstName ? customer.firstName.charAt(0) : "?"}
+                          {customer.firstName
+                            ? customer.firstName.charAt(0)
+                            : "?"}
                         </div>
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">
-                          {customer.firstName && customer.lastName ? 
-                            `${customer.firstName} ${customer.lastName}` : 
-                            customer.firstName || customer.lastName || "N/A"}
+                          {customer.firstName && customer.lastName
+                            ? `${customer.firstName} ${customer.lastName}`
+                            : customer.firstName || customer.lastName || "N/A"}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {customer.phone || "N/A"}
+                          {customer.address || "No address"}
                         </div>
                       </div>
                     </div>
@@ -267,23 +256,27 @@ const CustomersManagement = () => {
                     {customer.phone || "N/A"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      customer.status === "Active" ? "bg-green-100 text-green-800" :
-                      customer.status === "Inactive" ? "bg-red-100 text-red-800" :
-                      "bg-yellow-100 text-yellow-800"
-                    }`}>
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        customer.status === "Active"
+                          ? "bg-green-100 text-green-800"
+                          : customer.status === "Inactive"
+                          ? "bg-red-100 text-red-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
                       {customer.status || "Unknown"}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div className="flex space-x-2">
-                      <button 
+                      <button
                         className="text-blue-600 hover:text-blue-800"
                         onClick={() => openEditModal(customer)}
                       >
                         <Edit className="h-5 w-5" />
                       </button>
-                      <button 
+                      <button
                         className="text-red-600 hover:text-red-800"
                         onClick={() => openDeleteModal(customer)}
                       >
@@ -303,7 +296,7 @@ const CustomersManagement = () => {
         {/* Pagination */}
         <div className="px-6 py-4 flex items-center justify-between border-t border-gray-200">
           <div className="text-sm text-gray-500">
-            Showing 1 to {filteredCustomers.length} of {Client.length} entries
+            Showing 1 to {filteredCustomers.length} of {customers.length} entries
           </div>
           <div className="flex space-x-2">
             <button className="border px-3 py-1 rounded-md text-gray-600">
@@ -312,7 +305,7 @@ const CustomersManagement = () => {
             <button className="border px-3 py-1 rounded-md bg-blue-600 text-white">
               1
             </button>
-            {Client.length > 10 && (
+            {customers.length > 10 && (
               <>
                 <button className="border px-3 py-1 rounded-md text-gray-600">
                   2
@@ -328,35 +321,35 @@ const CustomersManagement = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Add Customer Modal */}
-      <CustomerModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        onCustomerAdded={handleAddCustomer} 
+      <CustomerModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCustomerAdded={handleAddCustomer}
       />
-      
+
       {/* Edit Customer Modal */}
       {selectedCustomer && (
         <EditCustomerModal
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
           customer={selectedCustomer}
-          onCustomerUpdated={handleEditCustomer}
+          onCustomerUpdated={(data) => handleEditCustomer(selectedCustomer.id, data)}
         />
       )}
-      
+
       {/* Delete Confirmation Modal */}
       {selectedCustomer && (
         <DeleteConfirmationModal
           isOpen={isDeleteModalOpen}
           onClose={() => setIsDeleteModalOpen(false)}
           customer={selectedCustomer}
-          onCustomerDeleted={handleDeleteCustomer}
+          onCustomerDeleted={() => handleDeleteCustomer(selectedCustomer.id)}
         />
       )}
     </div>
   );
-};
+}
 
 export default CustomersManagement;
