@@ -31,6 +31,7 @@ import SuperAdminDashboard from "./pages/superadmin/SuperAdminDashboard";
 import UserManagement from "./pages/superadmin/UserManagement";
 import SystemSettings from "./pages/superadmin/SystemSettings";
 import AuditLogs from "./pages/superadmin/AuditLogs";
+import SuperAdminReports from "./pages/superadmin/SuperAdminReports";
 
 // User Pages
 import UserDashboard from "./pages/user/UserDashboard";
@@ -64,6 +65,7 @@ const App = () => {
           <Route path="users" element={<UserManagement />} />
           <Route path="system-settings" element={<SystemSettings />} />
           <Route path="audit-logs" element={<AuditLogs />} />
+          <Route path="reports" element={<SuperAdminReports />} />
           
           {/* Include all admin routes for super admin as well */}
           <Route path="customers" element={<CustomersManagement />} />

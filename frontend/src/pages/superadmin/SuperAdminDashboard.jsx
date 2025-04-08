@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, Users, CreditCard, Clock, TrendingUp, AlertTriangle, UserPlus, WifiOff, DollarSign, Server, Shield } from 'lucide-react';
+import { BarChart3, Users, CreditCard, Clock, TrendingUp, AlertTriangle, UserPlus, WifiOff, DollarSign, Server, Shield, Settings } from 'lucide-react';
  
 const SuperAdminDashboard = () => {
   return (
