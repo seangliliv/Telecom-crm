@@ -18,7 +18,9 @@ const Login = () => {
     // Here you would typically call an API to authenticate.
     // For this example, we'll assume authentication passes.
     localStorage.setItem("userRole", role);
-    if (role === "admin") {
+    if (role === "superadmin") {
+      navigate("/superadmin/dashboard");
+    } else if (role === "admin") {
       navigate("/admin/dashboard");
     } else if (role === "user") {
       navigate("/user/dashboard");
@@ -33,7 +35,7 @@ const Login = () => {
       >
         {/* Header / Logo */}
         <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold">My CRM</h1>
+          <h1 className="text-3xl font-bold">KH Telecom CRM</h1>
           <p className="text-gray-500">Login to your account</p>
         </div>
         {/* Email Field */}
@@ -70,6 +72,7 @@ const Login = () => {
             required
           >
             <option value="">Select Role</option>
+            <option value="superadmin">Super Admin</option>
             <option value="admin">Admin</option>
             <option value="user">User</option>
           </select>

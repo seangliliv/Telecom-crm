@@ -5,12 +5,8 @@ import CustomerModal from "../../components/CustomerModal";
 import EditCustomerModal from "../../components/EditCustomerModal";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 
-import {
-  getCustomers,
-  createCustomer,
-  updateCustomer,
-  deleteCustomer,
-} from "../../api/customerService";
+// Import from allApi.js instead of customerService
+import { fetchCustomers, createCustomer, updateCustomer, deleteCustomer } from "../../allApi";
 
 function CustomersManagement() {
   const [customers, setCustomers] = useState([]);
@@ -29,8 +25,9 @@ function CustomersManagement() {
   const loadCustomers = async () => {
     try {
       setLoading(true);
-      const response = await getCustomers();
-      setCustomers(response.data);
+      // Use the fetchCustomers function from allApi.js
+      const data = await fetchCustomers();
+      setCustomers(data);
       setError(null);
     } catch (err) {
       // Check specifically for authentication errors
