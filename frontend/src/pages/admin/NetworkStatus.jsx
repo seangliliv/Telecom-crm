@@ -100,19 +100,8 @@ const NetworkStatus = () => {
           <p className="text-gray-600">Manage Services for customer</p>
         </div>
         <div className="flex items-center space-x-4">
-          <button className="bg-gray-200 rounded-full p-2 flex items-center">
-            <Globe className="h-5 w-5 text-gray-600" />
-            <span className="ml-1">EN</span>
-          </button>
-          <div className="relative">
-            <Bell className="h-6 w-6 text-gray-600" />
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
-              3
-            </span>
-          </div>
-          <div className="w-8 h-8 rounded-full overflow-hidden">
-            <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Profile" className="w-full h-full object-cover" />
-          </div>
+           
+           
         </div>
       </div>
 

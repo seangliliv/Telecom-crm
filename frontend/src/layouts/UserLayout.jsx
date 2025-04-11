@@ -1,8 +1,19 @@
 import React from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
-import { Bell } from 'lucide-react';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Bell, LogOut } from 'lucide-react';
 
 const UserLayout = () => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // Here you would implement your actual logout logic
+    // For example, clearing localStorage, cookies, or calling an auth service
+    localStorage.removeItem('auth_token'); // Remove any auth tokens
+    
+    // Redirect to login page
+    navigate('/login');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Top Navigation Bar */}
@@ -30,13 +41,20 @@ const UserLayout = () => {
                   1
                 </span>
               </div>
-              <div className="w-8 h-8 rounded-full overflow-hidden">
+              <div className="w-8 h-8 rounded-full overflow-hidden mr-4">
                 <img 
                   src="https://randomuser.me/api/portraits/women/44.jpg" 
                   alt="User avatar" 
                   className="w-full h-full object-cover"
                 />
               </div>
+              <button 
+                onClick={handleLogout}
+                className="flex items-center text-gray-600 hover:text-orange-500 transition-colors"
+              >
+                <LogOut className="h-5 w-5" />
+                <span className="ml-1 text-sm">Logout</span>
+              </button>
             </div>
           </div>
         </div>

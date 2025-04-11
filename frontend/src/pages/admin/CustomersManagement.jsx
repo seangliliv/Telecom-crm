@@ -135,10 +135,7 @@ function CustomersManagement() {
             <Plus className="h-5 w-5 mr-2" />
             Add New Customer
           </button>
-          <div className="ml-4 w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-            <span className="font-medium">A</span>
-          </div>
-          <span className="ml-2 font-medium">Admin</span>
+           
         </div>
       </div>
 

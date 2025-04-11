@@ -1,5 +1,5 @@
-import React from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Users, 
@@ -9,11 +9,24 @@ import {
   TrendingUp, 
   Settings, 
   Network, 
-  UserCog 
+  UserCog,
+  LogOut
 } from 'lucide-react';
 import { Bell } from 'lucide-react';
 
 const AdminLayout = () => {
+  const navigate = useNavigate();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  const handleLogout = () => {
+    // Clear auth tokens/session data
+    localStorage.removeItem('authToken'); // Adjust based on your auth implementation
+    sessionStorage.removeItem('user');    // Adjust based on your auth implementation
+    
+    // Redirect to login page
+    navigate('/login');
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
@@ -40,6 +53,17 @@ const AdminLayout = () => {
             <NavItem to="/admin/settings" icon={<Settings />} label="Settings" />
           </ul>
         </nav>
+        
+        {/* Logout Button in Sidebar */}
+        <div className="p-4 border-t border-gray-200">
+          <button 
+            onClick={handleLogout}
+            className="flex items-center w-full px-4 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-orange-100 transition-colors"
+          >
+            <LogOut className="mr-3 h-5 w-5" />
+            Logout
+          </button>
+        </div>
       </div>
       
       {/* Main Content */}
@@ -79,9 +103,29 @@ const AdminLayout = () => {
               </span>
             </div>
             
-            {/* User Profile */}
-            <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold">
-              JD
+            {/* User Profile with Dropdown */}
+            <div className="relative">
+              <div 
+                className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold cursor-pointer"
+                onClick={() => setShowUserMenu(!showUserMenu)}
+              >
+                JD
+              </div>
+              
+              {/* User Dropdown Menu */}
+              {showUserMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+                  <a href="/admin/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    Profile
+                  </a>
+                  <button 
+                    onClick={handleLogout} 
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>

@@ -143,15 +143,7 @@ const SubscriptionBilling = () => {
             <RefreshCw className="h-5 w-5 mr-2" />
             Refresh
           </button>
-          <div className="relative ml-4">
-            <Bell className="h-6 w-6 text-gray-600" />
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
-              3
-            </span>
-          </div>
-          <div className="ml-4 w-8 h-8 rounded-full bg-gray-300 overflow-hidden">
-            <img src="https://via.placeholder.com/150" alt="Profile" className="h-full w-full object-cover" />
-          </div>
+           
         </div>
       </div>
 

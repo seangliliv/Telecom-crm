@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Download, 
   Ticket, 
@@ -9,9 +9,16 @@ import {
   WifiOff,
   AlertTriangle
 } from 'lucide-react';
+import LiveChatPopup from '../../components/LiveChatPopup';
+import SpeedTestPopup from '../../components/SpeedTestPopup';
+import SupportTicketPopup from '../../components/SupportTicketPopup'; // Import the new component
 
 const UserSupportCenter = () => {
-  // Sample active support tickets
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isSpeedTestOpen, setIsSpeedTestOpen] = useState(false);
+  const [isTicketPopupOpen, setIsTicketPopupOpen] = useState(false); // New state for ticket popup
+  
+  // Sample active tickets
   const activeTickets = [
     {
       id: 'TK-2025001',
@@ -41,6 +48,18 @@ const UserSupportCenter = () => {
     { question: 'What payment methods are accepted?' }
   ];
 
+  const handleStartChat = () => {
+    setIsChatOpen(true);
+  };
+
+  const handleStartSpeedTest = () => {
+    setIsSpeedTestOpen(true);
+  };
+
+  const handleCreateTicket = () => {
+    setIsTicketPopupOpen(true);
+  };
+
   return (
     <div className="p-6">
       {/* Header Section */}
@@ -62,18 +81,21 @@ const UserSupportCenter = () => {
           icon={<Ticket className="h-6 w-6 text-blue-600" />}
           buttonText="Create Ticket"
           buttonColor="bg-blue-600"
+          onClick={handleCreateTicket} // Updated to open the ticket popup
         />
         <SupportOptionCard 
           title="Live Chat Support"
           icon={<MessageSquare className="h-6 w-6 text-green-600" />}
           buttonText="Start Chat"
           buttonColor="bg-green-600"
+          onClick={handleStartChat}
         />
         <SupportOptionCard 
           title="Speed Test"
           icon={<Activity className="h-6 w-6 text-purple-600" />}
           buttonText="Test Speed"
           buttonColor="bg-purple-600"
+          onClick={handleStartSpeedTest}
         />
       </div>
 
@@ -177,12 +199,21 @@ const UserSupportCenter = () => {
           ))}
         </div>
       </div>
+
+      {/* Live Chat Popup */}
+      <LiveChatPopup isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+      
+      {/* Speed Test Popup */}
+      <SpeedTestPopup isOpen={isSpeedTestOpen} onClose={() => setIsSpeedTestOpen(false)} />
+      
+      {/* Support Ticket Popup */}
+      <SupportTicketPopup isOpen={isTicketPopupOpen} onClose={() => setIsTicketPopupOpen(false)} />
     </div>
   );
 };
 
 // Support Option Card Component
-const SupportOptionCard = ({ title, icon, buttonText, buttonColor }) => {
+const SupportOptionCard = ({ title, icon, buttonText, buttonColor, onClick }) => {
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex justify-center mb-3">
@@ -191,7 +222,10 @@ const SupportOptionCard = ({ title, icon, buttonText, buttonColor }) => {
         </div>
       </div>
       <h3 className="text-center font-medium mb-4">{title}</h3>
-      <button className={`w-full py-2 rounded-md text-white ${buttonColor}`}>
+      <button 
+        className={`w-full py-2 rounded-md text-white ${buttonColor}`}
+        onClick={onClick}
+      >
         {buttonText}
       </button>
     </div>
