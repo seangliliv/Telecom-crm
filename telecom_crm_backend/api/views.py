@@ -36,10 +36,8 @@ class UserViewSet(viewsets.ModelViewSet):
     ordering_fields = ['username', 'email', 'date_joined', 'last_login']
     
     def get_permissions(self):
-        if self.action == 'create':
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
             permission_classes = [IsAdminOrSuperAdmin]
-        elif self.action in ['update', 'partial_update', 'destroy']:
-            permission_classes = [IsSuperAdmin]
         else:
             permission_classes = [IsAuthenticated]
         return [permission() for permission in permission_classes]

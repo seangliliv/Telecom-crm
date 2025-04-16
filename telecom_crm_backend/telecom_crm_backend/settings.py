@@ -71,9 +71,9 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
+    # 'DEFAULT_PERMISSION_CLASSES': [
+    #     'rest_framework.permissions.IsAuthenticated',
+    # ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
 }
@@ -118,13 +118,13 @@ WSGI_APPLICATION = 'telecom_crm_backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'teleccom-crm',
+        'NAME': 'teleccom_crm_db',
         'CLIENT': {
-            'host': 'mongodb+srv://seangliliv12:Mynk3p5FHyhVSE8R@cluster0.mzvoxvm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',
-            'tlsAllowInvalidCertificates': True,  # Required for some Atlas connections
-            # 'host': 'mongodb://localhost:27017',
-            # 'username': 'seangliliv12',
-            # 'password': 'Mynk3p5FHyhVSE8R',
+            # 'host': 'mongodb+srv://seangliliv12:Mynk3p5FHyhVSE8R@cluster0.mzvoxvm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',
+            # 'tlsAllowInvalidCertificates': True,  # Required for some Atlas connections
+            'host': 'mongodb://localhost:27017',
+            'username': 'liv',
+            'password': 'liv12345678',
             # 'authSource': 'admin',
             # 'authMechanism': 'SCRAM-SHA-1',
              
