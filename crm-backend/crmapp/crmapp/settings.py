@@ -51,6 +51,12 @@ INSTALLED_APPS = [
     "customers",
     "plans",
     "subscriptions",
+    "transactions",
+    "payment_methods",
+    "support_tickets",
+    "network_status",
+    "system_settings",
+    "audit_logs",
 ]
 
 MIDDLEWARE = [

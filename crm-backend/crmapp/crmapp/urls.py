@@ -25,4 +25,10 @@ urlpatterns = [
     path("api/", include("plans.urls")),
     path("api/", include("subscriptions.urls")),
     path("api/", include("invoices.urls")),
+    path("api/", include("transactions.urls")),
+    path("api/", include("payment_methods.urls")),
+    path("api/", include("support_tickets.urls")),
+    path("api/", include("network_status.urls")),
+    path("api/", include("system_settings.urls")),
+    path("api/", include("audit_logs.urls")),
 ]
