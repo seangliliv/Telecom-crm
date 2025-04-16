@@ -216,8 +216,7 @@ def add_ticket_message(request, ticket_id):
                 "$push": {"messages": message},
                 "$set": {"updatedAt": datetime.utcnow()}
             }
-        )
-        
+        ) 
         # Convert senderId back to string for response
         message["senderId"] = str(message["senderId"])
         
