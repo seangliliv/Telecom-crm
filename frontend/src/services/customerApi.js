@@ -5,8 +5,21 @@ import api from "./api";
 export const fetchCustomers = async () => {
   try {
     const response = await api.get("/api/customers/all/");
+    console.log("Raw API response:", response.data); // Debug log
+    
     // Return the data array from the response
-    return response.data.data || [];
+    // Handle different possible API response structures
+    if (response.data && Array.isArray(response.data)) {
+      return response.data;
+    } else if (response.data && Array.isArray(response.data.data)) {
+      return response.data.data;
+    } else if (response.data && Array.isArray(response.data.results)) {
+      // This is the actual structure returned by the API based on the screenshot
+      return response.data.results;
+    } else {
+      console.error("Unexpected API response structure:", response.data);
+      return [];
+    }
   } catch (error) {
     console.error("Error fetching customers:", error);
     throw error;
@@ -63,7 +76,18 @@ export const searchCustomers = async (searchQuery) => {
     const response = await api.get(`/api/customers/search/`, {
       params: { query: searchQuery }
     });
-    return response.data.data || [];
+    
+    // Handle different possible API response structures
+    if (response.data && Array.isArray(response.data)) {
+      return response.data;
+    } else if (response.data && Array.isArray(response.data.data)) {
+      return response.data.data;
+    } else if (response.data && Array.isArray(response.data.results)) {
+      // This is the actual structure based on the API response
+      return response.data.results;
+    } else {
+      return [];
+    }
   } catch (error) {
     console.error(`Error searching customers:`, error);
     throw error;

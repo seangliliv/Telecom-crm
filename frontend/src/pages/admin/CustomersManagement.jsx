@@ -1,15 +1,18 @@
-//src/pages/admin/customersmanagement.jsx
+//src/pages/admin/CustomersManagement.jsx
 import { useEffect, useState } from "react";
-import { Edit, Trash2, MoreVertical, Plus, Filter } from "lucide-react";
-import CustomerModal from "../../components/CustomerModal";
-import EditCustomerModal from "../../components/EditCustomerModal";
-import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
+import { Edit, Trash2, MoreVertical, Plus, Filter, CreditCard, Calendar } from "lucide-react";
+import CustomerModal from "../../components/modal/CustomerModal";
+import EditCustomerModal from "../../components/modal/EditCustomerModal";
+import DeleteConfirmationModal from "../../components/modal/DeleteConfirmationModal";
 
-// Import from allApi.js instead of customerService
-import { fetchCustomers, createCustomer, updateCustomer, deleteCustomer } from "../../allApi";
+// Import directly from customerApi.js instead of allApi
+import { fetchCustomers, createCustomer, updateCustomer, deleteCustomer } from "../../services/customerApi";
+// Import plan API for plan information
+import { fetchPlans } from "../../services/plansApi";
 
 function CustomersManagement() {
   const [customers, setCustomers] = useState([]);
+  const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -17,17 +20,31 @@ function CustomersManagement() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
+    console.log("CustomersManagement component mounted");
     loadCustomers();
+    loadPlans();
   }, []);
 
   const loadCustomers = async () => {
     try {
       setLoading(true);
-      // Use the fetchCustomers function from allApi.js
       const data = await fetchCustomers();
-      setCustomers(data);
+      console.log("API response data:", data); // Debug log
+      
+      // Make sure we're handling the data correctly
+      if (Array.isArray(data)) {
+        setCustomers(data);
+      } else if (data && Array.isArray(data.data)) {
+        // If API returns {data: [...]} structure
+        setCustomers(data.data);
+      } else {
+        console.error("Unexpected API response format:", data);
+        setCustomers([]);
+        setError("Received invalid data format from API.");
+      }
       setError(null);
     } catch (err) {
       // Check specifically for authentication errors
@@ -39,6 +56,16 @@ function CustomersManagement() {
       console.error("Error loading customers:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadPlans = async () => {
+    try {
+      const data = await fetchPlans();
+      setPlans(data);
+    } catch (err) {
+      console.error("Error loading plans:", err);
+      // Don't set error state to avoid blocking the main UI
     }
   };
 
@@ -85,14 +112,50 @@ function CustomersManagement() {
     setIsDeleteModalOpen(true);
   };
 
-  // Filter customers based on search term
+  const getPlanName = (planId) => {
+    const plan = plans.find(p => p.id === planId);
+    return plan ? plan.name : "Unknown Plan";
+  };
+
+  // Format date to readable format
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
+  // Filter customers based on search term and status
   const filteredCustomers = customers.filter((customer) => {
+    // Ensure we have a valid customer object
+    if (!customer) return false;
+    
     const fullName = `${customer.firstName || ""} ${customer.lastName || ""}`.toLowerCase();
     const email = (customer.email || "").toLowerCase();
-    const phone = (customer.phone || "").toLowerCase();
+    const phone = (customer.phoneNumber || "").toLowerCase(); // Updated from phone to phoneNumber
+    const address = customer.address ? Object.values(customer.address).join(" ").toLowerCase() : "";
     const search = searchTerm.toLowerCase();
     
-    return fullName.includes(search) || email.includes(search) || phone.includes(search);
+    // Debug customer object
+    if (customers.length > 0 && customers.indexOf(customer) === 0) {
+      console.log("First customer object:", customer);
+    }
+    
+    // Status filter - make it case insensitive
+    if (statusFilter !== "all") {
+      const customerStatus = (customer.status || "").toLowerCase();
+      if (customerStatus !== statusFilter.toLowerCase()) {
+        return false;
+      }
+    }
+    
+    return fullName.includes(search) || 
+           email.includes(search) || 
+           phone.includes(search) ||
+           address.includes(search);
   });
 
   if (loading) {
@@ -124,7 +187,7 @@ function CustomersManagement() {
         <div>
           <h1 className="text-2xl font-bold">Customers Management</h1>
           <p className="text-gray-600">
-            Manage customer profiles and activities
+            Manage customer profiles, subscriptions and billing
           </p>
         </div>
         <div className="flex items-center">
@@ -135,14 +198,13 @@ function CustomersManagement() {
             <Plus className="h-5 w-5 mr-2" />
             Add New Customer
           </button>
-           
         </div>
       </div>
 
       {/* Search and Filter Bar */}
       <div className="bg-white p-4 rounded-lg shadow mb-6">
-        <div className="flex justify-between">
-          <div className="relative w-full mr-4">
+        <div className="flex justify-between flex-wrap gap-3">
+          <div className="relative flex-grow mr-4">
             <input
               type="text"
               placeholder="Search customers..."
@@ -167,10 +229,22 @@ function CustomersManagement() {
               </svg>
             </div>
           </div>
-          <button className="border px-4 py-2 rounded-md flex items-center text-gray-700">
-            <Filter className="h-5 w-5 mr-2" />
-            Filters
-          </button>
+          <div className="flex gap-2">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="border px-4 py-2 rounded-md text-gray-700"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="pending">Pending</option>
+            </select>
+            <button className="border px-4 py-2 rounded-md flex items-center text-gray-700">
+              <Filter className="h-5 w-5 mr-2" />
+              More Filters
+            </button>
+          </div>
         </div>
       </div>
 
@@ -179,112 +253,147 @@ function CustomersManagement() {
         <h2 className="text-lg font-semibold p-4 border-b">Customer List</h2>
         {filteredCustomers.length === 0 ? (
           <div className="p-6 text-center text-gray-500">
-            {searchTerm
-              ? "No customers matching your search"
+            {searchTerm || statusFilter !== "all"
+              ? "No customers matching your search criteria"
               : "No customers found in the database"}
           </div>
         ) : (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Customer
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Email
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Phone Number
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Status
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredCustomers.map((customer, index) => (
-                <tr key={customer.id || index}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
-                          {customer.firstName
-                            ? customer.firstName.charAt(0)
-                            : "?"}
-                        </div>
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {customer.firstName && customer.lastName
-                            ? `${customer.firstName} ${customer.lastName}`
-                            : customer.firstName || customer.lastName || "N/A"}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {customer.address || "No address"}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {customer.email || "N/A"}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {customer.phone || "N/A"}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        customer.status === "Active"
-                          ? "bg-green-100 text-green-800"
-                          : customer.status === "Inactive"
-                          ? "bg-red-100 text-red-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {customer.status || "Unknown"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div className="flex space-x-2">
-                      <button
-                        className="text-blue-600 hover:text-blue-800"
-                        onClick={() => openEditModal(customer)}
-                      >
-                        <Edit className="h-5 w-5" />
-                      </button>
-                      <button
-                        className="text-red-600 hover:text-red-800"
-                        onClick={() => openDeleteModal(customer)}
-                      >
-                        <Trash2 className="h-5 w-5" />
-                      </button>
-                      <button className="text-gray-600 hover:text-gray-800">
-                        <MoreVertical className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Customer
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Contact
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Subscription
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Balance
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Status
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Actions
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredCustomers.map((customer) => (
+                  <tr key={customer.id}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                            {customer.firstName
+                              ? customer.firstName.charAt(0)
+                              : "?"}
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {customer.firstName && customer.lastName
+                              ? `${customer.firstName} ${customer.lastName}`
+                              : customer.firstName || customer.lastName || "N/A"}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {customer.address ? (
+                              <>
+                                {customer.address.city}, {customer.address.country}
+                              </>
+                            ) : (
+                              "No address"
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{customer.email || "N/A"}</div>
+                      <div className="text-sm text-gray-500">{customer.phoneNumber || "N/A"}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {customer.currentPlan ? (
+                        <div>
+                          <div className="flex items-center text-sm text-gray-900">
+                            <Calendar className="h-4 w-4 mr-1" />
+                            <span>Until: {formatDate(customer.currentPlan.endDate)}</span>
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {customer.currentPlan.autoRenew ? "Auto-renews" : "Manual renewal"}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-500">No active plan</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center text-sm font-medium">
+                        <CreditCard className="h-4 w-4 mr-1" />
+                        <span className={`${parseFloat(customer.balance) > 0 ? "text-red-600" : "text-green-600"}`}>
+                          ${typeof customer.balance === 'number' ? customer.balance.toFixed(2) : "0.00"}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          (customer.status || "").toLowerCase() === "active"
+                            ? "bg-green-100 text-green-800"
+                            : (customer.status || "").toLowerCase() === "inactive"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
+                        {customer.status || "Unknown"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div className="flex space-x-2">
+                        <button
+                          className="text-blue-600 hover:text-blue-800"
+                          onClick={() => openEditModal(customer)}
+                        >
+                          <Edit className="h-5 w-5" />
+                        </button>
+                        <button
+                          className="text-red-600 hover:text-red-800"
+                          onClick={() => openDeleteModal(customer)}
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </button>
+                        <button className="text-gray-600 hover:text-gray-800">
+                          <MoreVertical className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
         {/* Pagination */}
@@ -321,6 +430,7 @@ function CustomersManagement() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onCustomerAdded={handleAddCustomer}
+        plans={plans}
       />
 
       {/* Edit Customer Modal */}
@@ -330,6 +440,7 @@ function CustomersManagement() {
           onClose={() => setIsEditModalOpen(false)}
           customer={selectedCustomer}
           onCustomerUpdated={(data) => handleEditCustomer(selectedCustomer.id, data)}
+          plans={plans}
         />
       )}
 
