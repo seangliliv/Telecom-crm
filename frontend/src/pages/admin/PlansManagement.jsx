@@ -1,20 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Wifi, 
-  Plus, 
-  Search, 
-  Filter, 
-  Edit, 
-  Trash, 
-  MoreVertical, 
-  ChevronDown, 
+import React, { useState, useEffect } from "react";
+import {
+  Wifi,
+  Plus,
+  Search,
+  Filter,
+  Edit,
+  Trash,
+  MoreVertical,
+  ChevronDown,
   ChevronUp,
   Users,
   Calendar,
   DollarSign,
-  RefreshCw
-} from 'lucide-react';
-import { fetchPlans, createPlan as createPlanApi, updatePlan as updatePlanApi, deletePlan as deletePlanApi } from '../../allApi'; // Updated imports
+  RefreshCw,
+} from "lucide-react";
+import {
+  fetchPlans,
+  createPlan as createPlanApi,
+  updatePlan as updatePlanApi,
+  deletePlan as deletePlanApi,
+} from "../../services/plansApi"; // Make sure this path is correct
 
 const PlansManagement = () => {
   const [plans, setPlans] = useState([]);
@@ -23,16 +28,23 @@ const PlansManagement = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [currentPlan, setCurrentPlan] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortConfig, setSortConfig] = useState({
+    key: null,
+    direction: "ascending",
+  });
   const [formData, setFormData] = useState({
-    planName: '',
-    billingCycle: 'Monthly',
-    categoryId: '64a8f5d7e8b4c2a4a1d2f3e5', // Default category
-    price: '',
-    status: '1',
-    speed: '',
-    subscribers: 0
+    planName: "",
+    description: "",
+    billingCycle: "Monthly",
+    price: "",
+    status: "1",
+    speed: "",
+    features: {
+      data: 0,
+      calls: 0,
+      sms: 0
+    }
   });
 
   // State for error handling
@@ -43,39 +55,59 @@ const PlansManagement = () => {
     totalPlans: 0,
     activePlans: 0,
     totalSubscribers: 0,
-    averagePrice: 0
+    averagePrice: 0,
   });
- 
+
   // Fetch plans data
   const getPlans = async () => {
     try {
-      setLoading(true); // Set loading state at the beginning
-      const data = await fetchPlans(); // Using the fetchPlans function from allapi.js
-      console.log("Plans data received:", data);
+      setLoading(true);
+      const data = await fetchPlans();
+      console.log("Plans data received in component:", data);
+      
+      // Add a check to ensure we have valid data
+      if (!data || !Array.isArray(data)) {
+        console.error("Invalid data format received:", data);
+        setError("Failed to fetch plans: Invalid data format received");
+        setPlans([]);
+        setLoading(false);
+        return;
+      }
+      
+      if (data.length === 0) {
+        console.log("No plans received from API");
+      }
+      
       setPlans(data);
       updateStats(data);
-      setLoading(false); // Turn off loading after data is processed
-      setError(null); // Clear any previous errors
+      setLoading(false);
+      setError(null);
     } catch (error) {
       console.error("Error fetching plans:", error);
       setError(`Failed to fetch plans: ${error.message}`);
-      setLoading(false); // Make sure loading is turned off even in case of error
+      setPlans([]);
+      setLoading(false);
     }
   };
 
   // Calculate and update statistics
   const updateStats = (plansData) => {
-    const active = plansData.filter(plan => plan.status === "1").length;
-    const totalSubs = plansData.reduce((sum, plan) => sum + Number(plan.subscribers || 0), 0);
-    const avgPrice = plansData.length > 0 
-      ? plansData.reduce((sum, plan) => sum + Number(plan.price || 0), 0) / plansData.length 
-      : 0;
-    
+    const active = plansData.filter((plan) => plan.status === "1").length;
+    const totalSubs = plansData.reduce(
+      (sum, plan) => sum + Number(plan.subscribers || 0),
+      0
+    );
+    const avgPrice =
+      plansData.length > 0
+        ? plansData.reduce((sum, plan) => sum + Number(plan.price || 0), 0) /
+          plansData.length
+        : 0;
+
     setStats({
       totalPlans: plansData.length,
       activePlans: active,
       totalSubscribers: totalSubs,
-      averagePrice: avgPrice.toFixed(2)
+      averagePrice: avgPrice.toFixed(2),
     });
   };
 
@@ -126,13 +158,17 @@ const PlansManagement = () => {
   // Reset form data
   const resetForm = () => {
     setFormData({
-      planName: '',
-      billingCycle: 'Monthly',
-      categoryId: '64a8f5d7e8b4c2a4a1d2f3e5',
-      price: '',
-      status: '1',
-      speed: '',
-      subscribers: 0
+      planName: "",
+      description: "",
+      billingCycle: "Monthly",
+      price: "",
+      status: "1",
+      speed: "",
+      features: {
+        data: 0,
+        calls: 0,
+        sms: 0
+      }
     });
     setCurrentPlan(null);
   };
@@ -142,12 +178,16 @@ const PlansManagement = () => {
     setCurrentPlan(plan);
     setFormData({
       planName: plan.planName,
+      description: plan.description || "",
       billingCycle: plan.billingCycle,
-      categoryId: plan.categoryId,
       price: plan.price,
       status: plan.status,
-      speed: plan.speed,
-      subscribers: plan.subscribers
+      speed: plan.speed || plan.features?.speed || 0,
+      features: {
+        data: plan.features?.data || 0,
+        calls: plan.features?.calls || 0,
+        sms: plan.features?.sms || 0
+      }
     });
     setShowEditModal(true);
   };
@@ -160,9 +200,9 @@ const PlansManagement = () => {
 
   // Handle sorting
   const requestSort = (key) => {
-    let direction = 'ascending';
-    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
+    let direction = "ascending";
+    if (sortConfig.key === key && sortConfig.direction === "ascending") {
+      direction = "descending";
     }
     setSortConfig({ key, direction });
   };
@@ -172,11 +212,26 @@ const PlansManagement = () => {
     let sortablePlans = [...plans];
     if (sortConfig.key) {
       sortablePlans.sort((a, b) => {
+        // Handle nested properties like 'features.data'
+        if (sortConfig.key.includes('.')) {
+          const [parent, child] = sortConfig.key.split('.');
+          if (a[parent] && b[parent]) {
+            if (a[parent][child] < b[parent][child]) {
+              return sortConfig.direction === "ascending" ? -1 : 1;
+            }
+            if (a[parent][child] > b[parent][child]) {
+              return sortConfig.direction === "ascending" ? 1 : -1;
+            }
+          }
+          return 0;
+        }
+        
+        // Handle regular properties
         if (a[sortConfig.key] < b[sortConfig.key]) {
-          return sortConfig.direction === 'ascending' ? -1 : 1;
+          return sortConfig.direction === "ascending" ? -1 : 1;
         }
         if (a[sortConfig.key] > b[sortConfig.key]) {
-          return sortConfig.direction === 'ascending' ? 1 : -1;
+          return sortConfig.direction === "ascending" ? 1 : -1;
         }
         return 0;
       });
@@ -185,22 +240,31 @@ const PlansManagement = () => {
   }, [plans, sortConfig]);
 
   // Filter plans by search term
-  const filteredPlans = sortedPlans.filter(plan => 
-    plan.planName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPlans = sortedPlans.filter((plan) => {
+    // Handle various edge cases to prevent errors
+    if (!plan) return false;
+    
+    const planName = plan.planName || '';
+    const description = plan.description || '';
+    const searchLower = searchTerm.toLowerCase();
+    
+    return planName.toLowerCase().includes(searchLower) || 
+           description.toLowerCase().includes(searchLower);
+  });
 
   // Get sort indicator
   const getSortIndicator = (key) => {
     if (sortConfig.key !== key) return null;
-    return sortConfig.direction === 'ascending' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />;
+    return sortConfig.direction === "ascending" ? (
+      <ChevronUp className="h-4 w-4" />
+    ) : (
+      <ChevronDown className="h-4 w-4" />
+    );
   };
 
   // Initial data fetch
   useEffect(() => {
-    // Only run getPlans once when component mounts
     getPlans();
-    
-    // Empty dependency array ensures this only runs on mount
   }, []);
 
   return (
@@ -209,17 +273,19 @@ const PlansManagement = () => {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">Plans Management</h1>
-          <p className="text-gray-600">Manage data and service plans for customers</p>
+          <p className="text-gray-600">
+            Manage data and service plans for customers
+          </p>
         </div>
         <div className="flex space-x-2">
-          <button 
+          <button
             onClick={getPlans}
             className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md flex items-center"
           >
             <RefreshCw className="h-5 w-5 mr-2" />
             Refresh
           </button>
-          <button 
+          <button
             onClick={() => setShowAddModal(true)}
             className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center"
           >
@@ -231,27 +297,27 @@ const PlansManagement = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <StatCard 
-          title="Total Plans" 
-          value={stats.totalPlans} 
+        <StatCard
+          title="Total Plans"
+          value={stats.totalPlans}
           icon={<Wifi className="h-6 w-6 text-blue-600" />}
           bgColor="bg-blue-100"
         />
-        <StatCard 
-          title="Active Plans" 
-          value={stats.activePlans} 
+        <StatCard
+          title="Active Plans"
+          value={stats.activePlans}
           icon={<Wifi className="h-6 w-6 text-green-600" />}
           bgColor="bg-green-100"
         />
-        <StatCard 
-          title="Total Subscribers" 
-          value={stats.totalSubscribers} 
+        <StatCard
+          title="Total Subscribers"
+          value={stats.totalSubscribers}
           icon={<Users className="h-6 w-6 text-purple-600" />}
           bgColor="bg-purple-100"
         />
-        <StatCard 
-          title="Average Price" 
-          value={`$${stats.averagePrice}`} 
+        <StatCard
+          title="Average Price"
+          value={`$${stats.averagePrice}`}
           icon={<DollarSign className="h-6 w-6 text-yellow-600" />}
           bgColor="bg-yellow-100"
         />
@@ -262,14 +328,21 @@ const PlansManagement = () => {
         <div className="mb-4 bg-yellow-50 border-l-4 border-yellow-400 p-4">
           <div className="flex">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              <svg
+                className="h-5 w-5 text-yellow-400"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                  clipRule="evenodd"
+                />
               </svg>
             </div>
             <div className="ml-3">
-              <p className="text-sm text-yellow-700">
-                {error}
-              </p>
+              <p className="text-sm text-yellow-700">{error}</p>
             </div>
           </div>
         </div>
@@ -312,67 +385,70 @@ const PlansManagement = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th 
-                    scope="col" 
+                  <th
+                    scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => requestSort('planName')}
+                    onClick={() => requestSort("planName")}
                   >
                     <div className="flex items-center">
                       Plan Name
-                      {getSortIndicator('planName')}
+                      {getSortIndicator("planName")}
                     </div>
                   </th>
-                  <th 
-                    scope="col" 
+                  <th
+                    scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => requestSort('billingCycle')}
+                    onClick={() => requestSort("billingCycle")}
                   >
                     <div className="flex items-center">
                       Billing Cycle
-                      {getSortIndicator('billingCycle')}
+                      {getSortIndicator("billingCycle")}
                     </div>
                   </th>
-                  <th 
-                    scope="col" 
+                  <th
+                    scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => requestSort('price')}
+                    onClick={() => requestSort("price")}
                   >
                     <div className="flex items-center">
                       Price
-                      {getSortIndicator('price')}
+                      {getSortIndicator("price")}
                     </div>
                   </th>
-                  <th 
-                    scope="col" 
+                  <th
+                    scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => requestSort('speed')}
+                    onClick={() => requestSort("features.speed")}
                   >
                     <div className="flex items-center">
                       Speed (Mbps)
-                      {getSortIndicator('speed')}
+                      {getSortIndicator("features.speed")}
                     </div>
                   </th>
-                  <th 
-                    scope="col" 
+                  <th
+                    scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => requestSort('subscribers')}
+                    onClick={() => requestSort("features.data")}
                   >
                     <div className="flex items-center">
-                      Subscribers
-                      {getSortIndicator('subscribers')}
+                      Data (GB)
+                      {getSortIndicator("features.data")}
                     </div>
                   </th>
-                  <th 
-                    scope="col" 
+                  <th
+                    scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => requestSort('status')}
+                    onClick={() => requestSort("status")}
                   >
                     <div className="flex items-center">
                       Status
-                      {getSortIndicator('status')}
+                      {getSortIndicator("status")}
                     </div>
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     Actions
                   </th>
                 </tr>
@@ -387,48 +463,58 @@ const PlansManagement = () => {
                             <Wifi className="h-6 w-6 text-blue-600" />
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{plan.planName}</div>
-                            <div className="text-xs text-gray-500">ID: {typeof plan.id === 'string' ? plan.id.slice(-8) : plan.id}</div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {plan.planName}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {plan.description && plan.description.substring(0, 30)}
+                              {plan.description && plan.description.length > 30 ? "..." : ""}
+                            </div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <Calendar className="h-4 w-4 text-gray-500 mr-2" />
-                          <span className="text-sm text-gray-500">{plan.billingCycle}</span>
+                          <span className="text-sm text-gray-500">
+                            {plan.billingCycle}
+                          </span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <DollarSign className="h-4 w-4 text-green-500 mr-1" />
-                          <span className="text-sm font-medium text-gray-900">{plan.price}</span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {plan.price}
+                          </span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {plan.speed} Mbps
+                        {plan.speed || plan.features?.speed || 0} Mbps
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {plan.features?.data || 0} GB
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <Users className="h-4 w-4 text-gray-500 mr-2" />
-                          <span className="text-sm text-gray-500">{plan.subscribers}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          plan.status === "1" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                        }`}>
+                        <span
+                          className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            plan.status === "1"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
                           {plan.status === "1" ? "Active" : "Inactive"}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
-                          <button 
+                          <button
                             onClick={() => handleEditClick(plan)}
                             className="text-blue-600 hover:text-blue-900"
                           >
                             <Edit className="h-5 w-5" />
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleDeleteClick(plan)}
                             className="text-red-600 hover:text-red-900"
                           >
@@ -443,8 +529,13 @@ const PlansManagement = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="7" className="px-6 py-4 text-center text-sm text-gray-500">
-                      {searchTerm ? "No plans match your search" : "No plans found"}
+                    <td
+                      colSpan="7"
+                      className="px-6 py-4 text-center text-sm text-gray-500"
+                    >
+                      {searchTerm
+                        ? "No plans match your search"
+                        : "No plans found"}
                     </td>
                   </tr>
                 )}
@@ -480,8 +571,8 @@ const PlansManagement = () => {
 
       {/* Add Plan Modal */}
       {showAddModal && (
-        <Modal 
-          title="Add New Plan" 
+        <Modal
+          title="Add New Plan"
           onClose={() => {
             setShowAddModal(false);
             resetForm();
@@ -489,20 +580,42 @@ const PlansManagement = () => {
         >
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Plan Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Plan Name
+              </label>
               <input
                 type="text"
                 value={formData.planName}
-                onChange={(e) => setFormData({...formData, planName: e.target.value})}
+                onChange={(e) =>
+                  setFormData({ ...formData, planName: e.target.value })
+                }
                 className="w-full border p-2 rounded-md"
-                placeholder="e.g. Data Plus Pro"
+                placeholder="e.g. Premium Data Plan"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Billing Cycle</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+                className="w-full border p-2 rounded-md"
+                placeholder="Plan description"
+                rows="3"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Billing Cycle
+              </label>
               <select
                 value={formData.billingCycle}
-                onChange={(e) => setFormData({...formData, billingCycle: e.target.value})}
+                onChange={(e) =>
+                  setFormData({ ...formData, billingCycle: e.target.value })
+                }
                 className="w-full border p-2 rounded-md"
               >
                 <option value="Monthly">Monthly</option>
@@ -512,7 +625,9 @@ const PlansManagement = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Price (USD)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Price (USD)
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <span className="text-gray-500">$</span>
@@ -520,7 +635,9 @@ const PlansManagement = () => {
                 <input
                   type="number"
                   value={formData.price}
-                  onChange={(e) => setFormData({...formData, price: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, price: e.target.value })
+                  }
                   className="w-full pl-8 border p-2 rounded-md"
                   placeholder="0.00"
                   step="0.01"
@@ -528,22 +645,53 @@ const PlansManagement = () => {
                 />
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Speed (Mbps)</label>
-              <input
-                type="number"
-                value={formData.speed}
-                onChange={(e) => setFormData({...formData, speed: e.target.value})}
-                className="w-full border p-2 rounded-md"
-                placeholder="e.g. 100"
-                min="0"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Speed (Mbps)
+                </label>
+                <input
+                  type="number"
+                  value={formData.speed}
+                  onChange={(e) =>
+                    setFormData({ ...formData, speed: e.target.value })
+                  }
+                  className="w-full border p-2 rounded-md"
+                  placeholder="e.g. 100"
+                  min="0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  SMS Count
+                </label>
+                <input
+                  type="number"
+                  value={formData.features.sms}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      features: {
+                        ...formData.features,
+                        sms: Number(e.target.value)
+                      }
+                    })
+                  }
+                  className="w-full border p-2 rounded-md"
+                  placeholder="e.g. 100"
+                  min="0"
+                />
+              </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Status
+              </label>
               <select
                 value={formData.status}
-                onChange={(e) => setFormData({...formData, status: e.target.value})}
+                onChange={(e) =>
+                  setFormData({ ...formData, status: e.target.value })
+                }
                 className="w-full border p-2 rounded-md"
               >
                 <option value="1">Active</option>
@@ -573,8 +721,8 @@ const PlansManagement = () => {
 
       {/* Edit Plan Modal */}
       {showEditModal && (
-        <Modal 
-          title={`Edit Plan: ${currentPlan.planName}`} 
+        <Modal
+          title={`Edit Plan: ${currentPlan.planName}`}
           onClose={() => {
             setShowEditModal(false);
             resetForm();
@@ -582,19 +730,40 @@ const PlansManagement = () => {
         >
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Plan Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Plan Name
+              </label>
               <input
                 type="text"
                 value={formData.planName}
-                onChange={(e) => setFormData({...formData, planName: e.target.value})}
+                onChange={(e) =>
+                  setFormData({ ...formData, planName: e.target.value })
+                }
                 className="w-full border p-2 rounded-md"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Billing Cycle</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+                className="w-full border p-2 rounded-md"
+                rows="3"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Billing Cycle
+              </label>
               <select
                 value={formData.billingCycle}
-                onChange={(e) => setFormData({...formData, billingCycle: e.target.value})}
+                onChange={(e) =>
+                  setFormData({ ...formData, billingCycle: e.target.value })
+                }
                 className="w-full border p-2 rounded-md"
               >
                 <option value="Monthly">Monthly</option>
@@ -604,7 +773,9 @@ const PlansManagement = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Price (USD)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Price (USD)
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <span className="text-gray-500">$</span>
@@ -612,28 +783,100 @@ const PlansManagement = () => {
                 <input
                   type="number"
                   value={formData.price}
-                  onChange={(e) => setFormData({...formData, price: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, price: e.target.value })
+                  }
                   className="w-full pl-8 border p-2 rounded-md"
                   step="0.01"
                   min="0"
                 />
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Speed (Mbps)</label>
-              <input
-                type="number"
-                value={formData.speed}
-                onChange={(e) => setFormData({...formData, speed: e.target.value})}
-                className="w-full border p-2 rounded-md"
-                min="0"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Speed (Mbps)
+                </label>
+                <input
+                  type="number"
+                  value={formData.speed}
+                  onChange={(e) =>
+                    setFormData({ ...formData, speed: e.target.value })
+                  }
+                  className="w-full border p-2 rounded-md"
+                  min="0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Data (GB)
+                </label>
+                <input
+                  type="number"
+                  value={formData.features.data}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      features: {
+                        ...formData.features,
+                        data: Number(e.target.value)
+                      }
+                    })
+                  }
+                  className="w-full border p-2 rounded-md"
+                  min="0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Call Minutes
+                </label>
+                <input
+                  type="number"
+                  value={formData.features.calls}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      features: {
+                        ...formData.features,
+                        calls: Number(e.target.value)
+                      }
+                    })
+                  }
+                  className="w-full border p-2 rounded-md"
+                  min="0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  SMS Count
+                </label>
+                <input
+                  type="number"
+                  value={formData.features.sms}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      features: {
+                        ...formData.features,
+                        sms: Number(e.target.value)
+                      }
+                    })
+                  }
+                  className="w-full border p-2 rounded-md"
+                  min="0"
+                />
+              </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Status
+              </label>
               <select
                 value={formData.status}
-                onChange={(e) => setFormData({...formData, status: e.target.value})}
+                onChange={(e) =>
+                  setFormData({ ...formData, status: e.target.value })
+                }
                 className="w-full border p-2 rounded-md"
               >
                 <option value="1">Active</option>
@@ -663,13 +906,16 @@ const PlansManagement = () => {
 
       {/* Delete Plan Modal */}
       {showDeleteModal && (
-        <Modal 
-          title="Delete Plan" 
-          onClose={() => setShowDeleteModal(false)}
-        >
+        <Modal title="Delete Plan" onClose={() => setShowDeleteModal(false)}>
           <div className="p-4">
-            <p className="mb-4">Are you sure you want to delete the plan: <strong>{currentPlan.planName}</strong>?</p>
-            <p className="mb-6 text-sm text-gray-500">This action cannot be undone. This will permanently delete the plan and remove it from our servers.</p>
+            <p className="mb-4">
+              Are you sure you want to delete the plan:{" "}
+              <strong>{currentPlan.planName}</strong>?
+            </p>
+            <p className="mb-6 text-sm text-gray-500">
+              This action cannot be undone. This will permanently delete the
+              plan and remove it from our servers.
+            </p>
             <div className="flex justify-end space-x-3">
               <button
                 className="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-50"
@@ -697,9 +943,7 @@ const StatCard = ({ title, value, icon, bgColor }) => {
     <div className="bg-white rounded-lg shadow p-4">
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-gray-600">{title}</h2>
-        <div className={`${bgColor} p-2 rounded-full`}>
-          {icon}
-        </div>
+        <div className={`${bgColor} p-2 rounded-full`}>{icon}</div>
       </div>
       <div className="text-2xl font-bold">{value}</div>
     </div>
@@ -713,18 +957,29 @@ const Modal = ({ title, children, onClose }) => {
       <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-4">
         <div className="flex justify-between items-center p-4 border-b">
           <h3 className="text-lg font-semibold">{title}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
-        <div className="p-4">
-          {children}
-        </div>
+        <div className="p-4">{children}</div>
       </div>
     </div>
   );
 };
 
-export default PlansManagement;
+export default PlansManagement; 
