@@ -4,7 +4,7 @@ import api from "./api";
 // Get all subscriptions
 export const fetchSubscriptions = async () => {
   try {
-    const response = await api.get("/api/subscriptions/all/");
+    const response = await api.get("/api/sub/all/");
     // Return the data array from the response
     return response.data.data || [];
   } catch (error) {
@@ -16,7 +16,7 @@ export const fetchSubscriptions = async () => {
 // Get a single subscription by ID
 export const fetchSubscriptionById = async (subscriptionId) => {
   try {
-    const response = await api.get(`/api/subscriptions/${subscriptionId}/`);
+    const response = await api.get(`/api/sub/${subscriptionId}/`);
     return response.data;
   } catch (error) {
     console.error(`Error fetching subscription ${subscriptionId}:`, error);
@@ -27,7 +27,7 @@ export const fetchSubscriptionById = async (subscriptionId) => {
 // Get subscriptions by customer ID
 export const fetchSubscriptionsByCustomer = async (customerId) => {
   try {
-    const response = await api.get(`/api/subscriptions/customer/${customerId}/`);
+    const response = await api.get(`/api/sub/customer/${customerId}/`);
     return response.data.data || [];
   } catch (error) {
     console.error(`Error fetching subscriptions for customer ${customerId}:`, error);
@@ -38,7 +38,7 @@ export const fetchSubscriptionsByCustomer = async (customerId) => {
 // Get subscriptions by plan ID
 export const fetchSubscriptionsByPlan = async (planId) => {
   try {
-    const response = await api.get(`/api/subscriptions/plan/${planId}/`);
+    const response = await api.get(`/api/sub/plan/${planId}/`);
     return response.data.data || [];
   } catch (error) {
     console.error(`Error fetching subscriptions for plan ${planId}:`, error);
@@ -49,7 +49,7 @@ export const fetchSubscriptionsByPlan = async (planId) => {
 // Create a new subscription
 export const createSubscription = async (subscriptionData) => {
   try {
-    const response = await api.post("/api/subscriptions/", subscriptionData);
+    const response = await api.post("/api/sub/", subscriptionData);
     return response.data;
   } catch (error) {
     console.error("Error creating subscription:", error);
@@ -60,7 +60,7 @@ export const createSubscription = async (subscriptionData) => {
 // Update an existing subscription
 export const updateSubscription = async (subscriptionId, subscriptionData) => {
   try {
-    const response = await api.put(`/api/subscriptions/update/${subscriptionId}/`, subscriptionData);
+    const response = await api.put(`/api/sub/update/${subscriptionId}/`, subscriptionData);
     return response.data;
   } catch (error) {
     console.error(`Error updating subscription ${subscriptionId}:`, error);
@@ -71,7 +71,7 @@ export const updateSubscription = async (subscriptionId, subscriptionData) => {
 // Delete a subscription
 export const deleteSubscription = async (subscriptionId) => {
   try {
-    const response = await api.delete(`/api/subscriptions/delete/${subscriptionId}/`);
+    const response = await api.delete(`/api/sub/delete/${subscriptionId}/`);
     return response.data;
   } catch (error) {
     console.error(`Error deleting subscription ${subscriptionId}:`, error);
@@ -82,7 +82,7 @@ export const deleteSubscription = async (subscriptionId) => {
 // Cancel a subscription
 export const cancelSubscription = async (subscriptionId, cancellationDetails = {}) => {
   try {
-    const response = await api.put(`/api/subscriptions/${subscriptionId}/cancel/`, cancellationDetails);
+    const response = await api.put(`/api/sub/${subscriptionId}/cancel/`, cancellationDetails);
     return response.data;
   } catch (error) {
     console.error(`Error cancelling subscription ${subscriptionId}:`, error);
@@ -93,7 +93,7 @@ export const cancelSubscription = async (subscriptionId, cancellationDetails = {
 // Renew a subscription
 export const renewSubscription = async (subscriptionId, renewalDetails = {}) => {
   try {
-    const response = await api.put(`/api/subscriptions/${subscriptionId}/renew/`, renewalDetails);
+    const response = await api.put(`/api/sub/${subscriptionId}/renew/`, renewalDetails);
     return response.data;
   } catch (error) {
     console.error(`Error renewing subscription ${subscriptionId}:`, error);
@@ -104,7 +104,7 @@ export const renewSubscription = async (subscriptionId, renewalDetails = {}) => 
 // Change subscription plan
 export const changeSubscriptionPlan = async (subscriptionId, planId, changeDetails = {}) => {
   try {
-    const response = await api.put(`/api/subscriptions/${subscriptionId}/change-plan/`, {
+    const response = await api.put(`/api/sub/${subscriptionId}/change-plan/`, {
       planId,
       ...changeDetails
     });
