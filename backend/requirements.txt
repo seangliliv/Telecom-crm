@@ -1,7 +1,0 @@
-Django==4.2.20
-mongoengine==0.29.1  # Replaces djongo
-pymongo==4.11.2
-dnspython>=2.0
-djangorestframework>=3.14
-django-cors-headers
-pytz
