@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Outlet, NavLink, useNavigate, Navigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Users, 
@@ -13,18 +13,59 @@ import {
   LogOut
 } from 'lucide-react';
 import { Bell } from 'lucide-react';
+import AuthService from '../utils/AuthService';
+import { toast } from 'react-toastify';
 
 const AdminLayout = () => {
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [userInfo, setUserInfo] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Get user information from AuthService only once
+    const userDetails = AuthService.getUserInfo();
+    
+    if (!userDetails) {
+      // If no user details, set loading to false to handle redirect
+      setIsLoading(false);
+      return;
+    }
+    
+    setUserInfo(userDetails);
+    setIsLoading(false);
+  }, []);
 
   const handleLogout = () => {
-    // Clear auth tokens/session data
-    localStorage.removeItem('authToken'); // Adjust based on your auth implementation
-    sessionStorage.removeItem('user');    // Adjust based on your auth implementation
-    
-    // Redirect to login page
+    // Use AuthService to handle logout
+    AuthService.logout();
+    toast.success("Logged out successfully");
     navigate('/login');
+  };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
+
+  // If not authenticated, redirect to login
+  if (!AuthService.isAuthenticated()) {
+    return <Navigate to="/login" />;
+  }
+
+  // Get user initials for the avatar
+  const getUserInitials = () => {
+    if (!userInfo || !userInfo.name) return 'AD';
+    
+    const nameParts = userInfo.name.split(' ');
+    if (nameParts.length >= 2) {
+      return `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase();
+    }
+    return nameParts[0].substring(0, 2).toUpperCase();
   };
 
   return (
@@ -109,7 +150,7 @@ const AdminLayout = () => {
                 className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold cursor-pointer"
                 onClick={() => setShowUserMenu(!showUserMenu)}
               >
-                JD
+                {getUserInitials()}
               </div>
               
               {/* User Dropdown Menu */}

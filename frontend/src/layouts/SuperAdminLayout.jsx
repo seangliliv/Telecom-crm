@@ -1,6 +1,6 @@
 // src/layouts/SuperAdminLayout.jsx
-import React from "react";
-import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Outlet, NavLink, useNavigate, Navigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -18,16 +18,60 @@ import {
   PieChart,
 } from "lucide-react";
 import { Bell } from "lucide-react";
+import AuthService from "../utils/AuthService";
+import { toast } from "react-toastify";
 
 const SuperAdminLayout = () => {
   const navigate = useNavigate();
+  const [userInfo, setUserInfo] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Get user information from AuthService only once
+    const userDetails = AuthService.getUserInfo();
+    
+    if (!userDetails) {
+      // If no user details, set loading to false to handle redirect
+      setIsLoading(false);
+      return;
+    }
+    
+    setUserInfo(userDetails);
+    setIsLoading(false);
+  }, []);
 
   const handleLogout = () => {
-    // Clear the localStorage
-    localStorage.removeItem("userRole");
-    // Redirect to login page
+    // Use our AuthService to handle logout
+    AuthService.logout();
+    toast.success("Logged out successfully");
     navigate("/login");
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
+      </div>
+    );
+  }
+
+  // If not authenticated or not a superadmin, redirect to login
+  if (!AuthService.isAuthenticated() || (userInfo && userInfo.role !== 'superadmin')) {
+    return <Navigate to="/login" />;
+  }
+
+  // Get user initials for the avatar
+  const getInitials = () => {
+    if (!userInfo || !userInfo.name) return 'SA';
+    
+    const nameParts = userInfo.name.split(' ');
+    if (nameParts.length >= 2) {
+      return `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase();
+    }
+    return nameParts[0].substring(0, 2).toUpperCase();
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
@@ -174,7 +218,7 @@ const SuperAdminLayout = () => {
 
             {/* User Profile */}
             <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center text-white font-bold">
-              SA
+              {getInitials()}
             </div>
 
             {/* Logout Button */}

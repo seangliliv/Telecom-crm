@@ -1,18 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { Bell, LogOut } from 'lucide-react';
+import { toast } from 'react-toastify';
+import AuthService from '../utils/AuthService';
 
 const UserLayout = () => {
   const navigate = useNavigate();
+  const [userInfo, setUserInfo] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Get user information from AuthService
+    const userDetails = AuthService.getUserInfo();
+    setUserInfo(userDetails);
+    setIsLoading(false);
+  }, []);
 
   const handleLogout = () => {
-    // Here you would implement your actual logout logic
-    // For example, clearing localStorage, cookies, or calling an auth service
-    localStorage.removeItem('auth_token'); // Remove any auth tokens
-    
-    // Redirect to login page
+    // Use our AuthService to handle logout
+    AuthService.logout();
+    toast.success("You have been logged out");
     navigate('/login');
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -41,12 +59,8 @@ const UserLayout = () => {
                   1
                 </span>
               </div>
-              <div className="w-8 h-8 rounded-full overflow-hidden mr-4">
-                <img 
-                  src="https://randomuser.me/api/portraits/women/44.jpg" 
-                  alt="User avatar" 
-                  className="w-full h-full object-cover"
-                />
+              <div className="w-8 h-8 rounded-full overflow-hidden mr-4 bg-orange-500 flex items-center justify-center text-white font-bold">
+                {userInfo?.name ? userInfo.name.charAt(0).toUpperCase() : 'U'}
               </div>
               <button 
                 onClick={handleLogout}

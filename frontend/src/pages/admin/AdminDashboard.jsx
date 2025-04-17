@@ -8,8 +8,12 @@ import {
   fetchPlans,
   fetchServices
 } from '../../allApi';
+import AuthService from '../../utils/AuthService';
 
 const AdminDashboard = () => {
+  // User info state
+  const [userData, setUserData] = useState(null);
+  
   // State for storing API data
   const [customers, setCustomers] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
@@ -25,6 +29,12 @@ const AdminDashboard = () => {
     revenueAnalysis: []
   });
 
+  // Get user data from AuthService
+  useEffect(() => {
+    const userInfo = AuthService.getUserInfo();
+    setUserData(userInfo);
+  }, []);
+  
   // Fetch data from API
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -475,7 +485,10 @@ const AdminDashboard = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+      <h1 className="text-2xl font-bold mb-2">Dashboard</h1>
+      {userData && (
+        <p className="text-gray-600 mb-6">Welcome back, {userData.name}!</p>
+      )}
       
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">

@@ -1,29 +1,97 @@
 // src/pages/Login.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { toast } from "react-toastify";
+import { authService } from "../services/api";
+import AuthService from "../utils/AuthService";
 
 const Login = () => {
-  const [role, setRole] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  // Check if user is already logged in
+  useEffect(() => {
+    if (AuthService.isAuthenticated()) {
+      const userRole = AuthService.getUserRole();
+      if (userRole) {
+        console.log("User already logged in, redirecting to:", `/${userRole}/dashboard`);
+        // Use a timeout to prevent immediate redirection which can cause render loops
+        setTimeout(() => {
+          navigate(`/${userRole}/dashboard`);
+        }, 100);
+      }
+    }
+  }, []);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
+    
     // Basic field validation
-    if (!email || !password || !role) {
-      alert("Please fill in all fields and select a role.");
+    if (!email || !password) {
+      toast.error("Please fill in all fields.");
       return;
     }
-    // Here you would typically call an API to authenticate.
-    // For this example, we'll assume authentication passes.
-    localStorage.setItem("userRole", role);
-    if (role === "superadmin") {
-      navigate("/superadmin/dashboard");
-    } else if (role === "admin") {
-      navigate("/admin/dashboard");
-    } else if (role === "user") {
-      navigate("/user/dashboard");
+    
+    setIsLoading(true);
+    
+    try {
+      // Make the API call for login
+      console.log("Attempting login with:", { email });
+      const response = await authService.login({
+        email,
+        password,
+      });
+
+      console.log("Login response:", response.data);
+
+      // Get user data from the response - adjust based on your API response structure
+      const userData = response.data.user || response.data;
+      const token = response.data.token || response.data.access || '';
+      
+      // Create user object from response data
+      const user = {
+        id: userData.id || userData._id || userData.userId || '',
+        firstName: userData.firstName || userData.first_name || '',
+        lastName: userData.lastName || userData.last_name || '',
+        role: (userData.role || 'user'),
+      };
+      
+      console.log("Processed user data:", user);
+      
+      // Use AuthService to save authentication state
+      AuthService.saveAuthState(user, token);
+      
+      toast.success("Login successful!");
+      
+      // Redirect based on role
+      const role = user.role.toLowerCase();
+      console.log("Redirecting to role:", role);
+      
+      // Use setTimeout to delay navigation slightly to prevent render loops
+      setTimeout(() => {
+        if (role === "superadmin") {
+          console.log("Navigating to superadmin dashboard");
+          navigate("/superadmin/dashboard", { replace: true });
+        } else if (role === "admin") {
+          console.log("Navigating to admin dashboard");
+          navigate("/admin/dashboard", { replace: true });
+        } else {
+          console.log("Navigating to user dashboard");
+          navigate("/user/dashboard", { replace: true });
+        }
+      }, 500);
+    } catch (error) {
+      console.error("Login error:", error);
+      
+      if (error.response?.status === 401) {
+        toast.error("Invalid email or password");
+      } else {
+        toast.error(error.response?.data?.message || "Login failed. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -76,6 +144,7 @@ const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full border border-gray-300 p-3 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                 required
+                disabled={isLoading}
               />
             </div>
             
@@ -89,34 +158,34 @@ const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full border border-gray-300 p-3 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                 required
+                disabled={isLoading}
               />
-            </div>
-            
-            {/* Role Selection */}
-            <div>
-              <label className="block text-gray-700 mb-1 text-sm font-medium">Select Role</label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="w-full border border-gray-300 p-3 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                required
-              >
-                <option value="">Select Role</option>
-                <option value="superadmin">Super Admin</option>
-                <option value="admin">Admin</option>
-                <option value="user">User</option>
-              </select>
             </div>
             
             {/* Login Button */}
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 transition flex items-center justify-center"
+              className={`w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 transition flex items-center justify-center ${
+                isLoading ? "opacity-70 cursor-not-allowed" : ""
+              }`}
+              disabled={isLoading}
             >
-              <span>Sign in</span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Signing in...</span>
+                </>
+              ) : (
+                <>
+                  <span>Sign in</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </>
+              )}
             </button>
             
             {/* Forgot Password Link */}

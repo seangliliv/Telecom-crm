@@ -1,10 +1,22 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BarChart3, Users, CreditCard, Clock, TrendingUp, AlertTriangle, UserPlus, WifiOff, DollarSign, Server, Shield, Settings } from 'lucide-react';
- 
+import AuthService from '../../utils/AuthService';
+
 const SuperAdminDashboard = () => {
+  const [userData, setUserData] = useState(null);
+  
+  useEffect(() => {
+    // Retrieve the user info from AuthService
+    const userInfo = AuthService.getUserInfo();
+    setUserData(userInfo);
+  }, []);
+  
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Super Admin Dashboard</h1>
+      <h1 className="text-2xl font-bold mb-2">Super Admin Dashboard</h1>
+      {userData && (
+        <p className="text-gray-600 mb-6">Welcome back, {userData.name}!</p>
+      )}
       
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
@@ -138,7 +150,7 @@ const SuperAdminDashboard = () => {
               title="Security Alert Acknowledged"
               description="Multiple failed login attempts addressed"
               time="4 hours ago"
-              user="You"
+              user={userData?.name || "You"}
             />
           </div>
         </div>

@@ -1,8 +1,9 @@
 // src/App.jsx
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import React, { useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import AuthService from "./utils/AuthService";
 
 // Layouts
 import AdminLayout from "./layouts/AdminLayout";
@@ -13,7 +14,6 @@ import SuperAdminLayout from "./layouts/SuperAdminLayout";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
-import ProtectedRoute from "./components/ProtectedRoute";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -41,33 +41,65 @@ import UserServices from "./pages/user/UserServices";
 import UserReports from "./pages/user/UserReports";
 
 const App = () => {
-  // For simplicity, assume role is stored in localStorage
-  const userRole = localStorage.getItem("userRole");
+  // Log initial auth state on app load for debugging
+  useEffect(() => {
+    const isLoggedIn = AuthService.isAuthenticated();
+    const userRole = AuthService.getUserRole();
+    console.log("App initialized with auth state:", { isLoggedIn, userRole });
+    
+    // If the role is invalid or null but user is logged in, fix it
+    if (isLoggedIn && (!userRole || userRole === "null" || userRole === "undefined")) {
+      console.log("Invalid role detected, setting to default 'user'");
+      localStorage.setItem('userRole', 'user');
+    }
+  }, []);
+
+  // Get safe role (handle null/undefined cases)
+  const getSafeRole = () => {
+    const role = AuthService.getUserRole();
+    if (!role || role === "null" || role === "undefined") {
+      return "user"; // Default to user if role is missing or invalid
+    }
+    return role;
+  };
 
   return (
     <Router>
       <Routes>
         {/* Auth Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} /> 
-        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route 
+          path="/login" 
+          element={
+            AuthService.isAuthenticated() ? 
+            <Navigate to={`/${getSafeRole()}/dashboard`} replace /> : 
+            <Login />
+          } 
+        />
+        <Route 
+          path="/register" 
+          element={
+            AuthService.isAuthenticated() ? 
+            <Navigate to={`/${getSafeRole()}/dashboard`} replace /> : 
+            <Register />
+          } 
+        /> 
+        <Route 
+          path="/forgot-password" 
+          element={
+            AuthService.isAuthenticated() ? 
+            <Navigate to={`/${getSafeRole()}/dashboard`} replace /> : 
+            <ForgotPassword />
+          } 
+        />
         
         {/* Super Admin Routes */}
-        <Route
-          path="/superadmin/*"
-          element={
-            <ProtectedRoute userRole={userRole} allowedRole="superadmin">
-              <SuperAdminLayout />
-            </ProtectedRoute>
-          }
-        >
+        <Route path="/superadmin/*" element={<SuperAdminLayout />}>
+          <Route index element={<SuperAdminDashboard />} />
           <Route path="dashboard" element={<SuperAdminDashboard />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="system-settings" element={<SystemSettings />} />
           <Route path="audit-logs" element={<AuditLogs />} />
           <Route path="reports" element={<SuperAdminReports />} />
-          
-          {/* Include all admin routes for super admin as well */}
           <Route path="customers" element={<CustomersManagement />} />
           <Route path="invoices" element={<Invoice />} />
           <Route path="support" element={<SupportTickets />} />
@@ -78,14 +110,8 @@ const App = () => {
         </Route>
         
         {/* Admin Routes */}
-        <Route
-          path="/admin/*"
-          element={
-            <ProtectedRoute userRole={userRole} allowedRole="admin">
-              <AdminLayout />
-            </ProtectedRoute>
-          }
-        >
+        <Route path="/admin/*" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="customers" element={<CustomersManagement />} />
           <Route path="invoices" element={<Invoice />} />
@@ -98,14 +124,8 @@ const App = () => {
         </Route>
         
         {/* User Routes */}
-        <Route
-          path="/user/*"
-          element={
-            <ProtectedRoute userRole={userRole} allowedRole="user">
-              <UserLayout />
-            </ProtectedRoute>
-          }
-        >
+        <Route path="/user/*" element={<UserLayout />}>
+          <Route index element={<UserDashboard />} />
           <Route path="dashboard" element={<UserDashboard />} />
           <Route path="billing" element={<UserBilling />} />
           <Route path="support" element={<UserSupportCenter />} />
@@ -113,8 +133,29 @@ const App = () => {
           <Route path="reports" element={<UserReports />} />
         </Route>
         
-        {/* Default redirect to login page */}
-        <Route path="*" element={<Login />} />
+        {/* Handle null/invalid role case */}
+        <Route path="/null/*" element={<Navigate to="/user/dashboard" replace />} />
+        <Route path="/undefined/*" element={<Navigate to="/user/dashboard" replace />} />
+        
+        {/* Default redirect */}
+        <Route 
+          path="/" 
+          element={
+            AuthService.isAuthenticated() 
+              ? <Navigate to={`/${getSafeRole()}/dashboard`} replace /> 
+              : <Navigate to="/login" replace />
+          } 
+        />
+        
+        {/* Catch all other routes */}
+        <Route 
+          path="*" 
+          element={
+            AuthService.isAuthenticated() 
+              ? <Navigate to={`/${getSafeRole()}/dashboard`} replace /> 
+              : <Navigate to="/login" replace />
+          } 
+        />
       </Routes>
       <ToastContainer position="top-right" autoClose={5000} />
     </Router>
