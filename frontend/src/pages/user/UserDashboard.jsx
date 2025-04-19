@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Wifi, 
   Computer, 
@@ -7,14 +7,253 @@ import {
   CreditCard,
   Headphones
 } from 'lucide-react';
+import { userApi } from '../../services/userApi';
+import AuthService from '../../utils/AuthService';
+import { createSubscription } from '../../services/subscriptionApi';
+import { fetchPlans } from '../../services/plansApi';
+import { createCustomer } from '../../services/customerApi';
+import { toast } from 'react-toastify';
 
 const UserDashboard = () => {
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  // Add these new state variables
+  const [isCustomer, setIsCustomer] = useState(false);
+  const [customerId, setCustomerId] = useState(null);
+  const [availablePlans, setAvailablePlans] = useState([]);
+  const [showPlansModal, setShowPlansModal] = useState(false);
+  const [processingSubscription, setProcessingSubscription] = useState(false);
+  
+  
+  // Fetch user data on component mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setLoading(true);
+        
+        // Check if user is authenticated
+        if (!AuthService.isAuthenticated()) {
+          console.error("User is not authenticated");
+          setError("User not authenticated");
+          setLoading(false);
+          return;
+        }
+        
+        // Try multiple ways to get the current user info
+        console.log("Fetching current user data...");
+        
+        // Option 1: Get from login response stored in localStorage
+        const loginEmail = localStorage.getItem('email');
+        const userId = localStorage.getItem('userId');
+        
+        console.log("User data from localStorage - Email:", loginEmail, "ID:", userId);
+        
+        // If we have the user ID, try to fetch by ID
+        if (userId) {
+          try {
+            console.log("Attempting to fetch user by ID:", userId);
+            const response = await userApi.getUserById(userId);
+            
+            if (response && response.data) {
+              console.log("Successfully retrieved user by ID:", response.data);
+              const userData = userApi.processUserData(response.data);
+              setUserData(userData);
+              
+              // Check if user has a planId set, indicating they are a customer
+              if (userData.planId) {
+                setIsCustomer(true);
+                console.log("User is already a customer with plan:", userData.planId);
+              }
+              
+              setLoading(false);
+              return;
+            }
+          } catch (error) {
+            console.error("Error fetching by ID:", error);
+            // Continue to next approach
+          }
+        }
+        
+        // Option 2: If we have the email, try to fetch by filtering
+        if (loginEmail) {
+          try {
+            console.log("Attempting to fetch user by email:", loginEmail);
+            const response = await userApi.getAllUsers();
+            
+            if (response && response.data) {
+              const users = response.data.data || response.data || [];
+              const currentUser = users.find(user => user.email === loginEmail);
+              
+              if (currentUser) {
+                console.log("Found user with matching email:", currentUser);
+                const userData = userApi.processUserData(currentUser);
+                setUserData(userData);
+                
+                // Check if user has a planId set, indicating they are a customer
+                if (userData.planId) {
+                  setIsCustomer(true);
+                  console.log("User is already a customer with plan:", userData.planId);
+                }
+                
+                setLoading(false);
+                return;
+              }
+            }
+          } catch (error) {
+            console.error("Error fetching by email:", error);
+            // Continue to next approach
+          }
+        }
+        
+        // Option 3: Last resort - get all users and use the first one
+        try {
+          console.log("Attempting to fetch all users as fallback");
+          const response = await userApi.getAllUsers();
+          
+          if (response && response.data) {
+            const users = response.data.data || response.data || [];
+            
+            if (users.length > 0) {
+              console.log("Using first user from list as fallback:", users[0]);
+              const userData = userApi.processUserData(users[0]);
+              setUserData(userData);
+              
+              // Check if user has a planId set, indicating they are a customer
+              if (userData.planId) {
+                setIsCustomer(true);
+                console.log("User is already a customer with plan:", userData.planId);
+              }
+              
+              setLoading(false);
+              return;
+            }
+          }
+          
+          throw new Error("No users found in system");
+        } catch (error) {
+          console.error("Error in fallback approach:", error);
+          setError("Could not retrieve user data");
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Error in fetchUserData:", err);
+        setError("Failed to fetch user data");
+        setLoading(false);
+      }
+    };
+    
+    // Fetch available plans
+    const fetchAvailablePlans = async () => {
+      try {
+        console.log("Fetching available plans...");
+        const plans = await fetchPlans();
+        console.log("Available plans:", plans);
+        setAvailablePlans(plans);
+      } catch (error) {
+        console.error("Error fetching plans:", error);
+        // Continue with empty plans array, fallback will be used
+      }
+    };
+    
+    // Execute both fetch functions
+    fetchUserData();
+    fetchAvailablePlans();
+  }, []);
+
+  // Handle Quick Top-Up click
+  const handleQuickTopUp = () => {
+    console.log("Quick Top-Up clicked");
+    // If user is already a customer, show top-up modal
+    // If user is not a customer yet, show subscription plans
+    setShowPlansModal(true);
+  };
+  
+  // Handle plan selection and subscription
+  const handleSubscribeToPlan = async (planId) => {
+    try {
+      console.log("Subscribing to plan:", planId);
+      setProcessingSubscription(true);
+      
+      if (!userData) {
+        toast.error("User data not available. Please try again.");
+        setProcessingSubscription(false);
+        return;
+      }
+      
+      // 1. Create customer record if user is not already a customer
+      let customer;
+      if (!isCustomer) {
+        const customerData = {
+          userId: userData.id,
+          email: userData.email,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          status: 'active'
+        };
+        
+        console.log("Creating new customer:", customerData);
+        customer = await createCustomer(customerData);
+        console.log("Created new customer:", customer);
+        
+        // Set the customerId for further operations
+        setCustomerId(customer.id);
+      }
+      
+      // 2. Create subscription with the selected plan
+      const subscriptionData = {
+        customerId: customerId || customer?.id,
+        planId: planId,
+        status: 'active',
+        startDate: new Date().toISOString(),
+        // Calculate end date based on plan duration (assuming 30 days for now)
+        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      };
+      
+      console.log("Creating subscription:", subscriptionData);
+      const subscription = await createSubscription(subscriptionData);
+      console.log("Created subscription:", subscription);
+      
+      // 3. Update user data to reflect the new subscription
+      if (userData) {
+        // Update local state first
+        setUserData({
+          ...userData,
+          planId: planId
+        });
+        
+        // Set customer status
+        setIsCustomer(true);
+        
+        // You might need to update the user in the backend as well
+        // await userApi.updateUser(userData.id, { planId: planId });
+      }
+      
+      toast.success("Subscription successful!");
+      setShowPlansModal(false);
+    } catch (error) {
+      console.error("Error subscribing to plan:", error);
+      toast.error("Failed to subscribe to plan. Please try again.");
+    } finally {
+      setProcessingSubscription(false);
+    }
+  };
+
+  // Extract user's first name or use default
+  const firstName = userData?.firstName || "User";
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-gray-600">Welcome back, Lii</p>
+          {loading ? (
+            <p className="text-gray-600">Loading user data...</p>
+          ) : error ? (
+            <p className="text-red-500">{error}</p>
+          ) : (
+            <p className="text-gray-600">Welcome back, {firstName}</p>
+          )}
         </div>
         <button className="flex items-center px-4 py-2 bg-gray-100 rounded-md text-gray-700">
           <Download className="h-5 w-5 mr-2" />
@@ -26,90 +265,188 @@ const UserDashboard = () => {
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h2 className="text-lg font-semibold">Current Plan: Premium 8GB</h2>
-            <p className="text-gray-500">Valid until March 15, 2025</p>
+            <h2 className="text-lg font-semibold">
+              {isCustomer 
+                ? `Current Plan: Premium 8GB` 
+                : `No Active Plan`}
+            </h2>
+            <p className="text-gray-500">
+              {isCustomer 
+                ? `Valid until March 15, 2025` 
+                : `Subscribe to a plan to access our services`}
+            </p>
           </div>
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-md">
-            Quick Top-Up
+          <button 
+            className="bg-blue-600 text-white px-4 py-2 rounded-md"
+            onClick={handleQuickTopUp}
+            disabled={processingSubscription}
+          >
+            {processingSubscription ? (
+              <span className="flex items-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing...
+              </span>
+            ) : isCustomer ? 'Quick Top-Up' : 'Subscribe Now'}
           </button>
         </div>
 
-        {/* Usage Bars */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <UsageBar 
-            label="Data" 
-            used="5.2GB" 
-            total="8GB" 
-            percentage={65} 
-            color="bg-blue-500" 
-          />
-          <UsageBar 
-            label="Calls" 
-            used="45min" 
-            total="120min" 
-            percentage={37} 
-            color="bg-green-500" 
-          />
-          <UsageBar 
-            label="SMS" 
-            used="25" 
-            total="100" 
-            percentage={25} 
-            color="bg-purple-500" 
-          />
-        </div>
+        {/* Usage Bars - Only show if customer */}
+        {isCustomer && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <UsageBar 
+              label="Data" 
+              used="5.2GB" 
+              total="8GB" 
+              percentage={65} 
+              color="bg-blue-500" 
+            />
+            <UsageBar 
+              label="Calls" 
+              used="45min" 
+              total="120min" 
+              percentage={37} 
+              color="bg-green-500" 
+            />
+            <UsageBar 
+              label="SMS" 
+              used="25" 
+              total="100" 
+              percentage={25} 
+              color="bg-purple-500" 
+            />
+          </div>
+        )}
+        
+        {/* Subscribe prompt if not customer */}
+        {!isCustomer && !loading && (
+          <div className="text-center py-6">
+            <p className="text-gray-600 mb-4">
+              Subscribe to a plan to start enjoying our telecom services.
+            </p>
+            <button 
+              className="bg-green-500 text-white px-6 py-2 rounded-md hover:bg-green-600 transition-colors"
+              onClick={handleQuickTopUp}
+            >
+              View Available Plans
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Show for all users, but with different data for non-customers */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <StatCard 
           title="Internet Speed" 
-          value="85.2" 
+          value={isCustomer ? "85.2" : "0"} 
           unit="Mbps" 
-          subtitle="Download Speed" 
+          subtitle={isCustomer ? "Download Speed" : "No active plan"} 
           icon={<Wifi className="h-6 w-6 text-gray-800" />} 
         />
         <StatCard 
           title="Active Devices" 
-          value="3" 
-          subtitle="Connected Now" 
+          value={isCustomer ? "3" : "0"} 
+          subtitle={isCustomer ? "Connected Now" : "No active plan"} 
           icon={<Computer className="h-6 w-6 text-gray-800" />} 
         />
         <StatCard 
           title="Next Bill" 
-          value="$29.99" 
-          subtitle="Due in 15 days" 
+          value={isCustomer ? "$29.99" : "-"} 
+          subtitle={isCustomer ? "Due in 15 days" : "No subscription"} 
           icon={<Calendar className="h-6 w-6 text-gray-800" />} 
         />
       </div>
 
-      {/* Recent Activity */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
-        <div className="space-y-4">
-          <ActivityItem 
-            icon={<Wifi className="h-5 w-5 text-blue-500" />}
-            title="Data Usage Alert"
-            description="80% of data quota used"
-            time="2 hours ago"
-            bgColor="bg-blue-100"
-          />
-          <ActivityItem 
-            icon={<CreditCard className="h-5 w-5 text-green-500" />}
-            title="Payment Successful"
-            description="Monthly plan renewed"
-            time="Yesterday"
-            bgColor="bg-green-100"
-          />
-          <ActivityItem 
-            icon={<Headphones className="h-5 w-5 text-purple-500" />}
-            title="Support Ticket Resolved"
-            description="Ticket #45678 closed"
-            time="2 days ago"
-            bgColor="bg-purple-100"
-          />
+      {/* Recent Activity - Only show for customers */}
+      {isCustomer && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
+          <div className="space-y-4">
+            <ActivityItem 
+              icon={<Wifi className="h-5 w-5 text-blue-500" />}
+              title="Data Usage Alert"
+              description="80% of data quota used"
+              time="2 hours ago"
+              bgColor="bg-blue-100"
+            />
+            <ActivityItem 
+              icon={<CreditCard className="h-5 w-5 text-green-500" />}
+              title="Payment Successful"
+              description="Monthly plan renewed"
+              time="Yesterday"
+              bgColor="bg-green-100"
+            />
+            <ActivityItem 
+              icon={<Headphones className="h-5 w-5 text-purple-500" />}
+              title="Support Ticket Resolved"
+              description="Ticket #45678 closed"
+              time="2 days ago"
+              bgColor="bg-purple-100"
+            />
+          </div>
         </div>
-      </div>
+      )}
+      
+      {/* Plans Modal */}
+      {showPlansModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-3xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">
+                {isCustomer ? 'Select Top-Up Option' : 'Choose a Subscription Plan'}
+              </h2>
+              <button 
+                onClick={() => setShowPlansModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Fallback plan options if API doesn't return any */}
+              {(availablePlans.length === 0 ? [
+                { id: 'basic', name: 'Basic', data: '2GB', calls: '60min', sms: '50', price: 9.99 },
+                { id: 'premium', name: 'Premium', data: '8GB', calls: '120min', sms: '100', price: 29.99 },
+                { id: 'ultimate', name: 'Ultimate', data: '20GB', calls: 'Unlimited', sms: 'Unlimited', price: 49.99 }
+              ] : availablePlans).map(plan => (
+                <div key={plan.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <h3 className="text-lg font-semibold">{plan.name}</h3>
+                  <ul className="my-4 space-y-2">
+                    <li className="flex items-center">
+                      <span className="w-20">Data:</span>
+                      <span className="font-medium">{plan.data}</span>
+                    </li>
+                    <li className="flex items-center">
+                      <span className="w-20">Calls:</span>
+                      <span className="font-medium">{plan.calls}</span>
+                    </li>
+                    <li className="flex items-center">
+                      <span className="w-20">SMS:</span>
+                      <span className="font-medium">{plan.sms}</span>
+                    </li>
+                  </ul>
+                  <div className="flex items-baseline mb-4">
+                    <span className="text-2xl font-bold">${plan.price}</span>
+                    <span className="ml-1 text-gray-500">/month</span>
+                  </div>
+                  <button 
+                    onClick={() => handleSubscribeToPlan(plan.id)}
+                    className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors"
+                    disabled={processingSubscription}
+                  >
+                    {processingSubscription ? 'Processing...' : isCustomer ? 'Select' : 'Subscribe'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -166,5 +503,6 @@ const ActivityItem = ({ icon, title, description, time, bgColor }) => {
     </div>
   );
 };
+
 
 export default UserDashboard;

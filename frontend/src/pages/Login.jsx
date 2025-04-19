@@ -43,9 +43,9 @@ const Login = () => {
         email,
         password,
       });
-
+  
       console.log("Login response:", response.data);
-
+  
       // Get user data from the response - adjust based on your API response structure
       const userData = response.data.user || response.data;
       const token = response.data.token || response.data.access || '';
@@ -56,12 +56,16 @@ const Login = () => {
         firstName: userData.firstName || userData.first_name || '',
         lastName: userData.lastName || userData.last_name || '',
         role: (userData.role || 'user'),
+        email: userData.email || email, // Make sure to include email
       };
       
       console.log("Processed user data:", user);
       
       // Use AuthService to save authentication state
       AuthService.saveAuthState(user, token);
+      
+      // Store email in localStorage for direct access
+      localStorage.setItem('email', email);
       
       toast.success("Login successful!");
       
