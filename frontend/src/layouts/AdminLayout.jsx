@@ -75,7 +75,7 @@ const AdminLayout = () => {
         {/* Logo */}
         <div className="p-4 border-b border-gray-200">
           <h1 className="text-xl font-bold text-[#ff6b00]">
-            <span className="text-yellow-600">A</span>KH Telecom CRM
+            <span className="text-yellow-600"> </span>KH Telecom CRM
           </h1>
         </div>
         

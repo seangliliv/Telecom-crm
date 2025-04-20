@@ -25,6 +25,7 @@ import PlansManagement from "./pages/admin/PlansManagement";
 import SubscriptionBilling from "./pages/admin/SubscriptionBilling";
 import UserAndRole from "./pages/admin/UserAndRole";
 import SupportTickets from "./pages/admin/SupportTickets";
+import Settings from "./pages/admin/setting";
 
 // Super Admin Pages
 import SuperAdminDashboard from "./pages/superadmin/SuperAdminDashboard";
@@ -107,6 +108,7 @@ const App = () => {
           <Route path="sales" element={<SalesMarketing />} />
           <Route path="plans" element={<PlansManagement />} />
           <Route path="subscription" element={<SubscriptionBilling />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
         
         {/* Admin Routes */}
@@ -121,6 +123,7 @@ const App = () => {
           <Route path="plans" element={<PlansManagement />} />
           <Route path="subscription" element={<SubscriptionBilling />} />
           <Route path="users" element={<UserAndRole />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
         
         {/* User Routes */}
@@ -131,6 +134,7 @@ const App = () => {
           <Route path="support" element={<UserSupportCenter />} />
           <Route path="services" element={<UserServices />} />
           <Route path="reports" element={<UserReports />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
         
         {/* Handle null/invalid role case */}

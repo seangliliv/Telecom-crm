@@ -1,20 +1,126 @@
-//src/pages/admin/CustomersManagement.jsx
-import { useEffect, useState } from "react";
+// src/pages/admin/CustomersManagement.jsx
+import { useState } from "react";
 import { Edit, Trash2, MoreVertical, Plus, Filter, CreditCard, Calendar } from "lucide-react";
 import CustomerModal from "../../components/modal/CustomerModal";
 import EditCustomerModal from "../../components/modal/EditCustomerModal";
 import DeleteConfirmationModal from "../../components/modal/DeleteConfirmationModal";
 
-// Import directly from customerApi.js instead of allApi
-import { fetchCustomers, createCustomer, updateCustomer, deleteCustomer } from "../../services/customerApi";
-// Import plan API for plan information
-import { fetchPlans } from "../../services/plansApi";
+// Static mock data
+const MOCK_CUSTOMERS = [
+  {
+    id: "1",
+    firstName: "John",
+    lastName: "Doe",
+    email: "john.doe@example.com",
+    phoneNumber: "+1 555-123-4567",
+    address: {
+      street: "123 Main St",
+      city: "New York",
+      state: "NY",
+      postalCode: "10001",
+      country: "USA"
+    },
+    currentPlan: {
+      planId: "plan1",
+      startDate: "2024-01-01T00:00:00Z",
+      endDate: "2025-01-01T00:00:00Z",
+      autoRenew: true
+    },
+    balance: 0.00,
+    status: "active"
+  },
+  {
+    id: "2",
+    firstName: "Jane",
+    lastName: "Smith",
+    email: "jane.smith@example.com",
+    phoneNumber: "+1 555-987-6543",
+    address: {
+      street: "456 Park Ave",
+      city: "Boston",
+      state: "MA",
+      postalCode: "02108",
+      country: "USA"
+    },
+    currentPlan: {
+      planId: "plan2",
+      startDate: "2024-02-15T00:00:00Z",
+      endDate: "2024-08-15T00:00:00Z",
+      autoRenew: false
+    },
+    balance: 299.99,
+    status: "active"
+  },
+  {
+    id: "3",
+    firstName: "Robert",
+    lastName: "Johnson",
+    email: "robert.johnson@example.com",
+    phoneNumber: "+1 555-234-5678",
+    address: {
+      street: "789 Oak St",
+      city: "San Francisco",
+      state: "CA",
+      postalCode: "94107",
+      country: "USA"
+    },
+    currentPlan: null,
+    balance: 49.99,
+    status: "inactive"
+  },
+  {
+    id: "4",
+    firstName: "Maria",
+    lastName: "Garcia",
+    email: "maria.garcia@example.com",
+    phoneNumber: "+1 555-876-5432",
+    address: {
+      street: "321 Elm St",
+      city: "Miami",
+      state: "FL",
+      postalCode: "33101",
+      country: "USA"
+    },
+    currentPlan: {
+      planId: "plan3",
+      startDate: "2024-03-10T00:00:00Z",
+      endDate: "2024-06-10T00:00:00Z",
+      autoRenew: true
+    },
+    balance: 0.00,
+    status: "active"
+  },
+  {
+    id: "5",
+    firstName: "David",
+    lastName: "Brown",
+    email: "david.brown@example.com",
+    phoneNumber: "+1 555-345-6789",
+    address: {
+      street: "654 Pine St",
+      city: "Chicago",
+      state: "IL",
+      postalCode: "60601",
+      country: "USA"
+    },
+    currentPlan: null,
+    balance: 149.50,
+    status: "pending"
+  }
+];
+
+// Static mock plans
+const MOCK_PLANS = [
+  { id: "plan1", name: "Basic", price: 9.99 },
+  { id: "plan2", name: "Premium", price: 19.99 },
+  { id: "plan3", name: "Enterprise", price: 49.99 }
+];
 
 function CustomersManagement() {
-  const [customers, setCustomers] = useState([]);
-  const [plans, setPlans] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [customers, setCustomers] = useState(MOCK_CUSTOMERS);
+  const [plans] = useState(MOCK_PLANS);
+  const [loading] = useState(false);
+  const [error] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -22,84 +128,30 @@ function CustomersManagement() {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
 
-  useEffect(() => {
-    console.log("CustomersManagement component mounted");
-    loadCustomers();
-    loadPlans();
-  }, []);
-
-  const loadCustomers = async () => {
-    try {
-      setLoading(true);
-      const data = await fetchCustomers();
-      console.log("API response data:", data); // Debug log
-      
-      // Make sure we're handling the data correctly
-      if (Array.isArray(data)) {
-        setCustomers(data);
-      } else if (data && Array.isArray(data.data)) {
-        // If API returns {data: [...]} structure
-        setCustomers(data.data);
-      } else {
-        console.error("Unexpected API response format:", data);
-        setCustomers([]);
-        setError("Received invalid data format from API.");
-      }
-      setError(null);
-    } catch (err) {
-      // Check specifically for authentication errors
-      if (err.response && err.response.status === 401) {
-        setError("Authentication failed. Your session may have expired. Please contact system administrator.");
-      } else {
-        setError("Failed to load customers. Please try again later.");
-      }
-      console.error("Error loading customers:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadPlans = async () => {
-    try {
-      const data = await fetchPlans();
-      setPlans(data);
-    } catch (err) {
-      console.error("Error loading plans:", err);
-      // Don't set error state to avoid blocking the main UI
-    }
-  };
-
   const handleAddCustomer = async (customerData) => {
-    try {
-      await createCustomer(customerData);
-      setIsModalOpen(false);
-      loadCustomers();
-    } catch (err) {
-      console.error("Error adding customer:", err);
-      setError("Failed to add customer. Please try again.");
-    }
+    // Create a new customer with a fake ID
+    const newCustomer = {
+      ...customerData,
+      id: `customer-${Date.now()}`
+    };
+    
+    setCustomers([...customers, newCustomer]);
+    setIsModalOpen(false);
   };
 
   const handleEditCustomer = async (id, customerData) => {
-    try {
-      await updateCustomer(id, customerData);
-      setIsEditModalOpen(false);
-      loadCustomers();
-    } catch (err) {
-      console.error("Error updating customer:", err);
-      setError("Failed to update customer. Please try again.");
-    }
+    const updatedCustomers = customers.map(customer => 
+      customer.id === id ? { ...customerData, id } : customer
+    );
+    
+    setCustomers(updatedCustomers);
+    setIsEditModalOpen(false);
   };
 
   const handleDeleteCustomer = async (id) => {
-    try {
-      await deleteCustomer(id);
-      setIsDeleteModalOpen(false);
-      loadCustomers();
-    } catch (err) {
-      console.error("Error deleting customer:", err);
-      setError("Failed to delete customer. Please try again.");
-    }
+    const updatedCustomers = customers.filter(customer => customer.id !== id);
+    setCustomers(updatedCustomers);
+    setIsDeleteModalOpen(false);
   };
 
   const openEditModal = (customer) => {
@@ -135,14 +187,9 @@ function CustomersManagement() {
     
     const fullName = `${customer.firstName || ""} ${customer.lastName || ""}`.toLowerCase();
     const email = (customer.email || "").toLowerCase();
-    const phone = (customer.phoneNumber || "").toLowerCase(); // Updated from phone to phoneNumber
+    const phone = (customer.phoneNumber || "").toLowerCase();
     const address = customer.address ? Object.values(customer.address).join(" ").toLowerCase() : "";
     const search = searchTerm.toLowerCase();
-    
-    // Debug customer object
-    if (customers.length > 0 && customers.indexOf(customer) === 0) {
-      console.log("First customer object:", customer);
-    }
     
     // Status filter - make it case insensitive
     if (statusFilter !== "all") {
