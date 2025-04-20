@@ -41,7 +41,7 @@ const UserLayout = () => {
             {/* Logo and navigation */}
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
-                <LogoIcon className="h-8 w-8 text-orange-500" />
+                {/* <LogoIcon className="h-8 w-8 text-orange-500" /> */}
                 <span className="ml-2 text-xl font-bold text-orange-500">KH Telecom CRM</span>
               </div>
               <nav className="ml-10 flex items-center space-x-8">
