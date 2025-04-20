@@ -37,6 +37,17 @@ export const fetchCustomerById = async (customerId) => {
   }
 };
 
+// Get customers by user ID
+export const fetchCustomersByUserId = async (userId) => {
+  try {
+    const response = await api.get(`/api/users/${userId}/customers/`);
+    return response.data.data || [];
+  } catch (error) {
+    console.error(`Error fetching customers for user ${userId}:`, error);
+    throw error;
+  }
+};
+
 // Create a new customer
 export const createCustomer = async (customerData) => {
   try {
@@ -92,4 +103,33 @@ export const searchCustomers = async (searchQuery) => {
     console.error(`Error searching customers:`, error);
     throw error;
   }
+};
+
+// Process customer data from API response
+export const processCustomerData = (customerData) => {
+  return {
+    id: customerData._id || customerData.id || '',
+    firstName: customerData.firstName || '',
+    lastName: customerData.lastName || '',
+    email: customerData.email || '',
+    phoneNumber: customerData.phoneNumber || '',
+    userId: customerData.userId || null,
+    address: customerData.address || {
+      street: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      country: ''
+    },
+    currentPlan: customerData.currentPlan || {
+      planId: null,
+      startDate: null,
+      endDate: null,
+      autoRenew: false
+    },
+    balance: customerData.balance || 0.0,
+    status: customerData.status || 'active',
+    createdAt: customerData.createdAt || null,
+    updatedAt: customerData.updatedAt || null
+  };
 };

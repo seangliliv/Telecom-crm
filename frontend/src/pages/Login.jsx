@@ -4,11 +4,13 @@ import { useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { authService } from "../services/api";
 import AuthService from "../utils/AuthService";
+import autoCustomerService from "../services/autoCustomerService";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
 
   // Check if user is already logged in
@@ -23,7 +25,7 @@ const Login = () => {
         }, 100);
       }
     }
-  }, []);
+  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -50,13 +52,19 @@ const Login = () => {
       const userData = response.data.user || response.data;
       const token = response.data.token || response.data.access || '';
       
+      // Store both versions of user ID for compatibility
+      const userId = userData.id || userData.user_id || userData.userId || '';
+      
       // Create user object from response data
       const user = {
-        id: userData.id || userData._id || userData.userId || '',
+        id: userId,
+        userId: userId, // Ensure both formats are available
         firstName: userData.firstName || userData.first_name || '',
         lastName: userData.lastName || userData.last_name || '',
         role: (userData.role || 'user'),
         email: userData.email || email, // Make sure to include email
+        customerIds: userData.customerIds || [],
+        hasCustomer: userData.hasCustomer || false
       };
       
       console.log("Processed user data:", user);
@@ -66,6 +74,25 @@ const Login = () => {
       
       // Store email in localStorage for direct access
       localStorage.setItem('email', email);
+      
+      // Check for customer account or create one if needed
+      setIsProcessing(true);
+      if (!user.hasCustomer) {
+        toast.info("Setting up your customer profile...");
+        try {
+          // Use our auto customer service to ensure a customer exists
+          const customerId = await autoCustomerService.ensureCustomerExists();
+          if (customerId) {
+            console.log("Created/found customer account:", customerId);
+            // Store the customer ID now that we have it
+            localStorage.setItem('customerId', customerId);
+            localStorage.setItem('hasCustomer', 'true');
+          }
+        } catch (customerError) {
+          console.error("Error setting up customer account:", customerError);
+          // Continue anyway - the user can create a customer later
+        }
+      }
       
       toast.success("Login successful!");
       
@@ -91,11 +118,14 @@ const Login = () => {
       
       if (error.response?.status === 401) {
         toast.error("Invalid email or password");
+      } else if (error.response?.data?.error) {
+        toast.error(error.response.data.error);
       } else {
-        toast.error(error.response?.data?.message || "Login failed. Please try again.");
+        toast.error("Login failed. Please try again.");
       }
     } finally {
       setIsLoading(false);
+      setIsProcessing(false);
     }
   };
 
@@ -148,7 +178,7 @@ const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full border border-gray-300 p-3 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                 required
-                disabled={isLoading}
+                disabled={isLoading || isProcessing}
               />
             </div>
             
@@ -162,7 +192,7 @@ const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full border border-gray-300 p-3 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                 required
-                disabled={isLoading}
+                disabled={isLoading || isProcessing}
               />
             </div>
             
@@ -170,9 +200,9 @@ const Login = () => {
             <button
               type="submit"
               className={`w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 transition flex items-center justify-center ${
-                isLoading ? "opacity-70 cursor-not-allowed" : ""
+                (isLoading || isProcessing) ? "opacity-70 cursor-not-allowed" : ""
               }`}
-              disabled={isLoading}
+              disabled={isLoading || isProcessing}
             >
               {isLoading ? (
                 <>
@@ -181,6 +211,14 @@ const Login = () => {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                   <span>Signing in...</span>
+                </>
+              ) : isProcessing ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Setting up your account...</span>
                 </>
               ) : (
                 <>
@@ -209,6 +247,27 @@ const Login = () => {
               </p>
             </div>
           </form>
+          
+          {/* Debug information in development mode */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-8 border-t border-gray-100 pt-4">
+              <details className="text-xs text-gray-500">
+                <summary className="cursor-pointer hover:text-blue-500">Debug Info</summary>
+                <div className="mt-2 p-2 bg-gray-50 rounded overflow-auto">
+                  <p><strong>Auth State:</strong></p>
+                  <pre className="mt-1 whitespace-pre-wrap">
+                    {JSON.stringify({
+                      isAuthenticated: localStorage.getItem('isLoggedIn') === 'true',
+                      userId: localStorage.getItem('userId'),
+                      email: localStorage.getItem('email'),
+                      customerId: localStorage.getItem('customerId'),
+                      hasCustomer: localStorage.getItem('hasCustomer')
+                    }, null, 2)}
+                  </pre>
+                </div>
+              </details>
+            </div>
+          )}
         </div>
       </div>
     </div>

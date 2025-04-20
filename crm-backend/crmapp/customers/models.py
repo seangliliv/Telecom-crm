@@ -7,6 +7,7 @@ class CustomerModel:
         self.lastName = data["lastName"]
         self.email = data["email"]
         self.phoneNumber = data["phoneNumber"]
+        self.userId = ObjectId(data["userId"]) if data.get("userId") else None
         self.address = {
             "street": data.get("address", {}).get("street", ""),
             "city": data.get("address", {}).get("city", ""),
@@ -31,6 +32,7 @@ class CustomerModel:
             "lastName": self.lastName,
             "email": self.email,
             "phoneNumber": self.phoneNumber,
+            "userId": self.userId,
             "address": self.address,
             "currentPlan": self.currentPlan,
             "balance": self.balance,

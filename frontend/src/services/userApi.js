@@ -22,6 +22,15 @@ export const userApi = {
   },
 
   /**
+   * Get all customers associated with a specific user
+   * @param {string} userId - User ID
+   * @returns {Promise} API response
+   */
+  getUserCustomers: (userId) => {
+    return api.get(`/api/users/${userId}/customers/`);
+  },
+
+  /**
    * Create a new user
    * @param {Object} userData - User data object
    * @returns {Promise} API response
@@ -59,6 +68,18 @@ export const userApi = {
       return Promise.reject(new Error('User not authenticated'));
     }
     return api.get(`/api/users/${userId}/`);
+  },
+
+  /**
+   * Get current user's customers (based on token)
+   * @returns {Promise} API response
+   */
+  getCurrentUserCustomers: () => {
+    const userId = AuthService.getUserInfo()?.id;
+    if (!userId) {
+      return Promise.reject(new Error('User not authenticated'));
+    }
+    return api.get(`/api/users/${userId}/customers/`);
   },
 
   /**

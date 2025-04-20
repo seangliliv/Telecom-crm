@@ -24,6 +24,17 @@ export const fetchInvoiceById = async (invoiceId) => {
   }
 };
 
+// Get payment methods associated with an invoice
+export const fetchInvoicePaymentMethods = async (invoiceId) => {
+  try {
+    const response = await api.get(`/api/invoices/${invoiceId}/payment-methods/`);
+    return response.data.payment_methods || [];
+  } catch (error) {
+    console.error(`Error fetching payment methods for invoice ${invoiceId}:`, error);
+    throw error;
+  }
+};
+
 // Create a new invoice
 export const createInvoice = async (invoiceData) => {
   try {
@@ -53,6 +64,22 @@ export const deleteInvoice = async (invoiceId) => {
     return response.data;
   } catch (error) {
     console.error(`Error deleting invoice ${invoiceId}:`, error);
+    throw error;
+  }
+};
+
+// Add a payment method to an invoice
+export const addPaymentMethodToInvoice = async (invoiceId, paymentMethodData) => {
+  try {
+    // Add the invoiceId to the payment method data
+    const data = {
+      ...paymentMethodData,
+      invoiceId: invoiceId
+    };
+    const response = await api.post("/api/payment-methods/", data);
+    return response.data;
+  } catch (error) {
+    console.error(`Error adding payment method to invoice ${invoiceId}:`, error);
     throw error;
   }
 };
@@ -99,4 +126,22 @@ export const sendInvoiceByEmail = async (invoiceId, emailDetails = {}) => {
     console.error(`Error sending invoice ${invoiceId} by email:`, error);
     throw error;
   }
+};
+
+// Process invoice data from API response
+export const processInvoiceData = (invoiceData) => {
+  return {
+    id: invoiceData._id || invoiceData.id || '',
+    customerId: invoiceData.customerId || '',
+    subscriptionId: invoiceData.subscriptionId || '',
+    amount: invoiceData.amount || 0,
+    status: invoiceData.status || 'unpaid',
+    issueDate: invoiceData.issueDate || null,
+    dueDate: invoiceData.dueDate || null,
+    paidDate: invoiceData.paidDate || null,
+    items: invoiceData.items || [],
+    paymentMethod: invoiceData.paymentMethod || null,
+    createdAt: invoiceData.createdAt || null,
+    updatedAt: invoiceData.updatedAt || null
+  };
 };

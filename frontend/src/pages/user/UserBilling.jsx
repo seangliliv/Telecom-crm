@@ -11,8 +11,9 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { fetchPaymentMethods, createPaymentMethod, deletePaymentMethod } from '../../services/billingApi';
+import AuthService from '../../utils/AuthService';
 
-const UserBilling = ({ customerId }) => {
+const UserBilling = () => {
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -25,21 +26,56 @@ const UserBilling = ({ customerId }) => {
     expiry_year: '',
     cvv: ''
   });
+  const [customerId, setCustomerId] = useState(null);
+  // Get the user ID from the auth service
+  const userInfo = AuthService.getUserInfo();
+  const userId = userInfo?.id;
 
+  // Try in your browser console for testing
+fetch('http://localhost:8000/api/payment-methods/', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    customerId: "6804920eafd2d2360342e27",
+    type: "credit_card",
+    cardType: "visa",
+    lastFour: "1234",
+    expiryDate: "05/28",
+    isDefault: true
+  })
+})
+.then(response => {
+  console.log('Status:', response.status);
+  return response.text();
+})
+.then(text => {
+  console.log('Response:', text);
+})
+.catch(error => {
+  console.error('Error:', error);
+});
+
+// Run this in your browser console to get all existing customers
+fetch('http://localhost:8000/api/customers/all/')
+  .then(response => response.json())
+  .then(data => console.log(data));
   // Fetch payment methods for the customer
   useEffect(() => {
     const getPaymentMethods = async () => {
-      // Don't attempt to fetch if customerId is undefined or null
-      if (!customerId) {
-        setError("Invalid customer ID. Please check your configuration.");
+      // Don't attempt to fetch if userId is undefined or null
+      if (!userId) {
         setLoading(false);
         return;
       }
       
       setLoading(true);
       try {
-        const data = await fetchPaymentMethods(customerId);
-        setPaymentMethods(data);
+        const data = await fetchPaymentMethods(userId);
+        // Check if the response structure matches what we expect
+        const methodsArray = data?.payment_methods || data || [];
+        setPaymentMethods(Array.isArray(methodsArray) ? methodsArray : []);
         setError(null);
       } catch (err) {
         console.error("Error fetching payment methods:", err);
@@ -50,38 +86,87 @@ const UserBilling = ({ customerId }) => {
     };
     
     getPaymentMethods();
-  }, [customerId]);
+  }, [userId]);
+
+  // At the top of your component, add state for customer ID
+
+
+// Add a function to get customer ID 
+useEffect(() => {
+  const getUserCustomer = async () => {
+    try {
+      // First try to get customer by email
+      const userInfo = AuthService.getUserInfo();
+      if (!userInfo) return;
+      
+      const response = await fetch('http://localhost:8000/api/customers/all/');
+      const data = await response.json();
+      
+      // Find customer with matching email
+      const customers = data.results || [];
+      const customer = customers.find(c => c.email === userInfo.email);
+      
+      if (customer) {
+        setCustomerId(customer.id);
+      } else {
+        // If no customer exists, you might want to create one
+        console.log("No customer found for this user");
+      }
+    } catch (err) {
+      console.error("Error getting customer:", err);
+    }
+  };
+  
+  getUserCustomer();
+}, []);
 
   const handleAddPaymentMethod = async (e) => {
     e.preventDefault();
     
-    // Don't attempt to create if customerId is undefined or null
-    if (!customerId) {
-      showNotification('Invalid customer ID. Cannot add payment method.', 'error');
+    // Don't attempt to create if userId is undefined or null
+    if (!userId) {
+      showNotification('Cannot add payment method. Please login again.', 'error');
       return;
     }
     
     try {
-      const data = await createPaymentMethod({
-        customer_id: customerId,
-        ...newCard
-      });
+      // Format the data according to what the backend expects
+      const lastFour = newCard.card_number.slice(-4);
+      const cardType = getCardType(newCard.card_number);
+      
+      const paymentMethodData = {
+        customerId: userId,
+        type: "credit_card",
+        cardType: cardType,
+        lastFour: lastFour,
+        expiryDate: `${newCard.expiry_month}/${newCard.expiry_year.toString().slice(-2)}`,
+        isDefault: paymentMethods.length === 0 // Make default if first card
+      };
+      
+      // Log the exact data being sent
+      console.log("Sending payment method data:", paymentMethodData);
+      
+      const response = await createPaymentMethod(paymentMethodData);
+    
       
       // Add the new payment method to the list
-      setPaymentMethods([...paymentMethods, data]);
-      
-      // Clear the form and hide it
-      setNewCard({
-        card_number: '',
-        card_holder_name: '',
-        expiry_month: '',
-        expiry_year: '',
-        cvv: ''
-      });
-      setShowAddForm(false);
-      
-      // Show success notification
-      showNotification('Payment method added successfully', 'success');
+      const newPaymentMethod = response?.payment_method || response;
+      if (newPaymentMethod) {
+        setPaymentMethods([...paymentMethods, newPaymentMethod]);
+        
+        // Clear the form and hide it
+        setNewCard({
+          card_number: '',
+          card_holder_name: '',
+          expiry_month: '',
+          expiry_year: '',
+          cvv: ''
+        });
+        setShowAddForm(false);
+        
+        // Show success notification
+        showNotification('Payment method added successfully', 'success');
+      }
     } catch (err) {
       console.error("Error adding payment method:", err);
       showNotification('Failed to add payment method', 'error');
@@ -134,22 +219,22 @@ const UserBilling = ({ customerId }) => {
     
     // Visa
     if (number.startsWith('4')) {
-      return 'Visa';
+      return 'visa';
     }
     // Mastercard
     else if (/^5[1-5]/.test(number)) {
-      return 'Mastercard';
+      return 'mastercard';
     }
     // Amex
     else if (/^3[47]/.test(number)) {
-      return 'Amex';
+      return 'amex';
     }
     // Discover
     else if (/^6(?:011|5)/.test(number)) {
-      return 'Discover';
+      return 'discover';
     }
     
-    return 'Unknown';
+    return 'unknown';
   };
 
   return (
@@ -336,11 +421,11 @@ const UserBilling = ({ customerId }) => {
           {paymentMethods.map((method) => (
             <div key={method.id} className="bg-white rounded-lg shadow p-4 flex justify-between items-center">
               <div className="flex items-center">
-                {getCardType(method.card_number) === 'Visa' ? (
+                {method.cardType === 'visa' ? (
                   <div className="w-10 h-6 bg-gray-800 rounded flex items-center justify-center text-white text-xs font-bold">
                     VISA
                   </div>
-                ) : getCardType(method.card_number) === 'Mastercard' ? (
+                ) : method.cardType === 'mastercard' ? (
                   <div className="w-10 h-6 bg-gray-200 rounded flex items-center justify-center">
                     <div className="flex">
                       <div className="w-3 h-3 bg-red-500 rounded-full opacity-80"></div>
@@ -349,20 +434,20 @@ const UserBilling = ({ customerId }) => {
                   </div>
                 ) : (
                   <div className="w-10 h-6 bg-gray-200 rounded flex items-center justify-center text-gray-700 text-xs font-bold">
-                    {getCardType(method.card_number)}
+                    {method.cardType || 'CARD'}
                   </div>
                 )}
                 <div className="ml-4">
                   <p className="font-medium">
-                    {getCardType(method.card_number)} ending in {method.card_number.slice(-4)}
+                    {method.cardType || 'Card'} ending in {method.lastFour}
                   </p>
                   <p className="text-sm text-gray-500">
-                    Expires {method.expiry_month}/{method.expiry_year.toString().slice(-2)}
+                    Expires {method.expiryDate}
                   </p>
                 </div>
               </div>
               <div className="flex items-center">
-                {method.is_default && (
+                {method.isDefault && (
                   <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded mr-3">
                     Default
                   </span>
@@ -379,7 +464,7 @@ const UserBilling = ({ customerId }) => {
         </div>
       </div>
 
-      {/* Billing History Info */}
+      {/* Billing Information */}
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-lg font-semibold mb-4">Billing Information</h2>
         

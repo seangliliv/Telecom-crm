@@ -23,6 +23,9 @@ def list_payment_methods(request, customer_id):
         pm["id"] = str(pm["_id"])
         del pm["_id"]
         pm["customerId"] = str(pm["customerId"])
+        
+        if pm.get("invoiceId"):
+            pm["invoiceId"] = str(pm["invoiceId"])
     
     return Response({"payment_methods": payment_methods}, status=status.HTTP_200_OK)
 
@@ -50,6 +53,13 @@ def create_payment_method(request):
             data["customerId"] = ObjectId(data["customerId"])
         except:
             return Response({"error": "Invalid customer ID format"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Convert invoiceId to ObjectId if provided
+        if data.get("invoiceId"):
+            try:
+                data["invoiceId"] = ObjectId(data["invoiceId"])
+            except:
+                return Response({"error": "Invalid invoice ID format"}, status=status.HTTP_400_BAD_REQUEST)
         
         payment_method = PaymentMethodModel(data)
         result = payment_method_collection.insert_one(payment_method.to_dict())
@@ -58,12 +68,63 @@ def create_payment_method(request):
         new_payment_method["_id"] = str(result.inserted_id)
         new_payment_method["customerId"] = str(new_payment_method["customerId"])
         
+        if new_payment_method.get("invoiceId"):
+            new_payment_method["invoiceId"] = str(new_payment_method["invoiceId"])
+        
         return Response({
             "message": "Payment method added successfully",
             "payment_method": new_payment_method
         }, status=status.HTTP_201_CREATED)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# @api_view(["GET"])
+# @permission_classes([AllowAny])
+# def customer_payment_methods(request, customer_id):
+#     """Get all payment methods for a customer"""
+#     try:
+#         customer_oid = parse_objectid(customer_id)
+#         if not customer_oid:
+#             return Response({"error": "Invalid customer ID format"}, status=status.HTTP_400_BAD_REQUEST)
+            
+#         # Find customer to verify it exists
+#         customer = customer_collection.find_one({"_id": customer_oid})
+#         if not customer:
+#             return Response({"error": "Customer not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+#         # Get payment methods for this customer
+#         payment_methods = list(payment_method_collection.find({"customerId": customer_oid}))
+        
+#         # Format response
+#         for pm in payment_methods:
+#             pm["id"] = str(pm["_id"])
+#             del pm["_id"]
+#             pm["customerId"] = str(pm["customerId"])
+        
+#         return Response({
+#             "payment_methods": payment_methods
+#         }, status=status.HTTP_200_OK)
+#     except Exception as e:
+#         return Response({"error": f"Error retrieving payment methods: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def get_payment_methods_by_invoice(request, invoice_id):
+    try:
+        invoice_oid = ObjectId(invoice_id)
+    except:
+        return Response({"error": "Invalid invoice ID format"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    payment_methods = list(payment_method_collection.find({"invoiceId": invoice_oid}))
+    for pm in payment_methods:
+        pm["id"] = str(pm["_id"])
+        del pm["_id"]
+        pm["customerId"] = str(pm["customerId"])
+        pm["invoiceId"] = str(pm["invoiceId"])
+    
+    return Response({"payment_methods": payment_methods}, status=status.HTTP_200_OK)
 
 
 @api_view(["DELETE"])

@@ -22,6 +22,7 @@ class CustomerSerializer(serializers.Serializer):
     lastName = serializers.CharField(required=True)
     email = serializers.EmailField(required=True)
     phoneNumber = serializers.CharField(required=True)
+    userId = serializers.CharField(required=False, allow_null=True)
     address = AddressSerializer(required=False)
     currentPlan = CurrentPlanSerializer(required=False)
     balance = serializers.FloatField(default=0.0)

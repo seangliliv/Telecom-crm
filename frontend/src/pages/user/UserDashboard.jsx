@@ -11,20 +11,22 @@ import { userApi } from '../../services/userApi';
 import AuthService from '../../utils/AuthService';
 import { createSubscription } from '../../services/subscriptionApi';
 import { fetchPlans } from '../../services/plansApi';
-import { createCustomer } from '../../services/customerApi';
+import { createCustomer, fetchCustomersByUserId } from '../../services/customerApi';
+import { createPaymentMethod } from '../../services/billingApi';
+import { createInvoice } from '../../services/invoiceApi';
 import { toast } from 'react-toastify';
 
 const UserDashboard = () => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // Add these new state variables
+  // State variables for customer and subscription management
   const [isCustomer, setIsCustomer] = useState(false);
-  const [customerId, setCustomerId] = useState(null);
+  const [customerData, setCustomerData] = useState(null);
   const [availablePlans, setAvailablePlans] = useState([]);
   const [showPlansModal, setShowPlansModal] = useState(false);
   const [processingSubscription, setProcessingSubscription] = useState(false);
-  
+  const [activeSubscription, setActiveSubscription] = useState(null);
   
   // Fetch user data on component mount
   useEffect(() => {
@@ -60,10 +62,18 @@ const UserDashboard = () => {
               const userData = userApi.processUserData(response.data);
               setUserData(userData);
               
-              // Check if user has a planId set, indicating they are a customer
-              if (userData.planId) {
-                setIsCustomer(true);
-                console.log("User is already a customer with plan:", userData.planId);
+              // Now check if user has associated customers using our new endpoint
+              try {
+                const customersResponse = await fetchCustomersByUserId(userId);
+                console.log("User's customers:", customersResponse);
+                
+                if (customersResponse && customersResponse.data && customersResponse.data.length > 0) {
+                  setIsCustomer(true);
+                  setCustomerData(customersResponse.data[0]);
+                  console.log("User is a customer, data:", customersResponse.data[0]);
+                }
+              } catch (customerError) {
+                console.error("Error fetching user's customers:", customerError);
               }
               
               setLoading(false);
@@ -90,10 +100,18 @@ const UserDashboard = () => {
                 const userData = userApi.processUserData(currentUser);
                 setUserData(userData);
                 
-                // Check if user has a planId set, indicating they are a customer
-                if (userData.planId) {
-                  setIsCustomer(true);
-                  console.log("User is already a customer with plan:", userData.planId);
+                // Now check if user has associated customers using our new endpoint
+                try {
+                  const customersResponse = await fetchCustomersByUserId(userData.id);
+                  console.log("User's customers:", customersResponse);
+                  
+                  if (customersResponse && customersResponse.data && customersResponse.data.length > 0) {
+                    setIsCustomer(true);
+                    setCustomerData(customersResponse.data[0]);
+                    console.log("User is a customer, data:", customersResponse.data[0]);
+                  }
+                } catch (customerError) {
+                  console.error("Error fetching user's customers:", customerError);
                 }
                 
                 setLoading(false);
@@ -119,10 +137,18 @@ const UserDashboard = () => {
               const userData = userApi.processUserData(users[0]);
               setUserData(userData);
               
-              // Check if user has a planId set, indicating they are a customer
-              if (userData.planId) {
-                setIsCustomer(true);
-                console.log("User is already a customer with plan:", userData.planId);
+              // Now check if user has associated customers using our new endpoint
+              try {
+                const customersResponse = await fetchCustomersByUserId(userData.id);
+                console.log("User's customers:", customersResponse);
+                
+                if (customersResponse && customersResponse.data && customersResponse.data.length > 0) {
+                  setIsCustomer(true);
+                  setCustomerData(customersResponse.data[0]);
+                  console.log("User is a customer, data:", customersResponse.data[0]);
+                }
+              } catch (customerError) {
+                console.error("Error fetching user's customers:", customerError);
               }
               
               setLoading(false);
@@ -182,51 +208,99 @@ const UserDashboard = () => {
       }
       
       // 1. Create customer record if user is not already a customer
-      let customer;
+      let customerId;
       if (!isCustomer) {
         const customerData = {
           userId: userData.id,
           email: userData.email,
           firstName: userData.firstName,
           lastName: userData.lastName,
+          phoneNumber: userData.phoneNumber || '555-555-5555',
           status: 'active'
         };
         
         console.log("Creating new customer:", customerData);
-        customer = await createCustomer(customerData);
-        console.log("Created new customer:", customer);
+        const customerResponse = await createCustomer(customerData);
+        console.log("Created new customer:", customerResponse);
         
-        // Set the customerId for further operations
-        setCustomerId(customer.id);
+        if (customerResponse && customerResponse.data) {
+          customerId = customerResponse.data.id || customerResponse.data._id;
+          setCustomerData(customerResponse.data);
+          setIsCustomer(true);
+        } else {
+          throw new Error("Failed to create customer record");
+        }
+      } else {
+        customerId = customerData.id;
       }
       
       // 2. Create subscription with the selected plan
+      const startDate = new Date();
+      const endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days later
+      
       const subscriptionData = {
-        customerId: customerId || customer?.id,
+        customerId: customerId,
         planId: planId,
         status: 'active',
-        startDate: new Date().toISOString(),
-        // Calculate end date based on plan duration (assuming 30 days for now)
-        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        autoRenew: true
       };
       
       console.log("Creating subscription:", subscriptionData);
-      const subscription = await createSubscription(subscriptionData);
-      console.log("Created subscription:", subscription);
+      const subscriptionResponse = await createSubscription(subscriptionData);
+      console.log("Created subscription:", subscriptionResponse);
       
-      // 3. Update user data to reflect the new subscription
-      if (userData) {
-        // Update local state first
-        setUserData({
-          ...userData,
-          planId: planId
-        });
+      if (subscriptionResponse && subscriptionResponse.data) {
+        const subscriptionId = subscriptionResponse.data.id || subscriptionResponse.data._id;
+        setActiveSubscription(subscriptionResponse.data);
         
-        // Set customer status
-        setIsCustomer(true);
+        // 3. Create an invoice for the subscription
+        const selectedPlan = availablePlans.find(plan => plan.id === planId) || 
+                            { price: 29.99, name: 'Premium Plan' };
         
-        // You might need to update the user in the backend as well
-        // await userApi.updateUser(userData.id, { planId: planId });
+        const invoiceData = {
+          customerId: customerId,
+          subscriptionId: subscriptionId,
+          amount: selectedPlan.price || 29.99,
+          status: 'unpaid',
+          issueDate: new Date().toISOString(),
+          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
+          items: [
+            {
+              description: `Subscription to ${selectedPlan.name || 'Premium'} Plan`,
+              amount: selectedPlan.price || 29.99
+            }
+          ]
+        };
+        
+        console.log("Creating invoice:", invoiceData);
+        const invoiceResponse = await createInvoice(invoiceData);
+        console.log("Created invoice:", invoiceResponse);
+        
+        if (invoiceResponse && invoiceResponse.data) {
+          const invoiceId = invoiceResponse.data.id || invoiceResponse.data._id;
+          
+          // 4. Add a payment method linked to the invoice (optional)
+          const paymentMethodData = {
+            customerId: customerId,
+            invoiceId: invoiceId,
+            type: 'credit_card',
+            cardType: 'visa',
+            lastFour: '4242',
+            expiryDate: '12/28',
+            isDefault: true
+          };
+          
+          try {
+            console.log("Creating payment method:", paymentMethodData);
+            const paymentMethodResponse = await createPaymentMethod(paymentMethodData);
+            console.log("Created payment method:", paymentMethodResponse);
+          } catch (paymentError) {
+            console.error("Error creating payment method:", paymentError);
+            // Continue with subscription flow even if payment method creation fails
+          }
+        }
       }
       
       toast.success("Subscription successful!");
@@ -241,6 +315,46 @@ const UserDashboard = () => {
 
   // Extract user's first name or use default
   const firstName = userData?.firstName || "User";
+  
+  // Get plan details from active subscription or default values
+  const currentPlanDetails = () => {
+    if (!isCustomer) return { name: 'No Active Plan', validUntil: '' };
+    
+    if (customerData && customerData.currentPlan && customerData.currentPlan.planId) {
+      const endDate = customerData.currentPlan.endDate ? 
+        new Date(customerData.currentPlan.endDate).toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        }) : 'Unknown';
+      
+      return {
+        name: 'Premium 8GB', // This should come from plan details in a real app
+        validUntil: endDate
+      };
+    }
+    
+    if (activeSubscription) {
+      const endDate = activeSubscription.endDate ? 
+        new Date(activeSubscription.endDate).toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        }) : 'Unknown';
+      
+      return {
+        name: 'Premium 8GB', // This should come from plan details in a real app
+        validUntil: endDate
+      };
+    }
+    
+    return { 
+      name: 'Basic Plan', 
+      validUntil: 'March 15, 2025' // Default placeholder
+    };
+  };
+  
+  const planInfo = currentPlanDetails();
 
   return (
     <div className="p-6">
@@ -267,12 +381,12 @@ const UserDashboard = () => {
           <div>
             <h2 className="text-lg font-semibold">
               {isCustomer 
-                ? `Current Plan: Premium 8GB` 
+                ? `Current Plan: ${planInfo.name}` 
                 : `No Active Plan`}
             </h2>
             <p className="text-gray-500">
               {isCustomer 
-                ? `Valid until March 15, 2025` 
+                ? `Valid until ${planInfo.validUntil}` 
                 : `Subscribe to a plan to access our services`}
             </p>
           </div>

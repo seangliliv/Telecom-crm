@@ -4,8 +4,9 @@ import api from "./api";
 // Get all payment methods for a customer
 export const fetchPaymentMethods = async (customerId) => {
   try {
+    // Fix the URL path to include /api/ prefix
     const response = await api.get(`/api/customers/${customerId}/payment-methods/`);
-    return response.data;
+    return response.data.payment_methods || response.data;
   } catch (error) {
     console.error(`Error fetching payment methods for customer ${customerId}:`, error);
     throw error;
@@ -37,7 +38,7 @@ export const deletePaymentMethod = async (paymentMethodId) => {
 // Set a payment method as default
 export const setDefaultPaymentMethod = async (customerId, paymentMethodId) => {
   try {
-    const response = await api.put(`/customers/${customerId}/payment-methods/${paymentMethodId}/set-default/`);
+    const response = await api.put(`/api/customers/${customerId}/payment-methods/${paymentMethodId}/set-default/`);
     return response.data;
   } catch (error) {
     console.error(`Error setting payment method ${paymentMethodId} as default:`, error);
@@ -48,7 +49,7 @@ export const setDefaultPaymentMethod = async (customerId, paymentMethodId) => {
 // Fetch customer billing details
 export const fetchCustomerBillingDetails = async (customerId) => {
   try {
-    const response = await api.get(`/customers/${customerId}/billing-details/`);
+    const response = await api.get(`/api/customers/${customerId}/billing-details/`);
     return response.data;
   } catch (error) {
     console.error(`Error fetching billing details for customer ${customerId}:`, error);
@@ -59,7 +60,7 @@ export const fetchCustomerBillingDetails = async (customerId) => {
 // Update customer billing address
 export const updateBillingAddress = async (customerId, addressData) => {
   try {
-    const response = await api.put(`/customers/${customerId}/billing-address/`, addressData);
+    const response = await api.put(`/api/customers/${customerId}/billing-address/`, addressData);
     return response.data;
   } catch (error) {
     console.error(`Error updating billing address for customer ${customerId}:`, error);
@@ -70,7 +71,7 @@ export const updateBillingAddress = async (customerId, addressData) => {
 // Fetch billing history
 export const fetchBillingHistory = async (customerId, params = {}) => {
   try {
-    const response = await api.get(`/customers/${customerId}/billing-history/`, { params });
+    const response = await api.get(`/api/customers/${customerId}/billing-history/`, { params });
     return response.data;
   } catch (error) {
     console.error(`Error fetching billing history for customer ${customerId}:`, error);
@@ -81,7 +82,7 @@ export const fetchBillingHistory = async (customerId, params = {}) => {
 // Download invoice
 export const downloadInvoice = async (invoiceId) => {
   try {
-    const response = await api.get(`/invoices/${invoiceId}/download/`, {
+    const response = await api.get(`/api/invoices/${invoiceId}/download/`, {
       responseType: 'blob'
     });
     return response.data;
@@ -94,7 +95,7 @@ export const downloadInvoice = async (invoiceId) => {
 // Process manual payment
 export const processManualPayment = async (customerId, paymentData) => {
   try {
-    const response = await api.post(`/customers/${customerId}/process-payment/`, paymentData);
+    const response = await api.post(`/api/customers/${customerId}/process-payment/`, paymentData);
     return response.data;
   } catch (error) {
     console.error(`Error processing payment for customer ${customerId}:`, error);
@@ -105,7 +106,7 @@ export const processManualPayment = async (customerId, paymentData) => {
 // Update auto-payment settings
 export const updateAutoPaymentSettings = async (customerId, settings) => {
   try {
-    const response = await api.put(`/customers/${customerId}/auto-payment-settings/`, settings);
+    const response = await api.put(`/api/customers/${customerId}/auto-payment-settings/`, settings);
     return response.data;
   } catch (error) {
     console.error(`Error updating auto-payment settings for customer ${customerId}:`, error);

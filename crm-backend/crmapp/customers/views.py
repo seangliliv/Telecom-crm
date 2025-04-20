@@ -45,6 +45,9 @@ def list_customers(request):
 
         if c.get("currentPlan") and c["currentPlan"].get("planId"):
             c["currentPlan"]["planId"] = str(c["currentPlan"]["planId"])
+            
+        if c.get("userId"):
+            c["userId"] = str(c["userId"])
 
     paginator = Paginator(customers, limit)
     paged = paginator.get_page(page)
@@ -70,8 +73,12 @@ def get_customer(request, customer_id):
 
     customer["id"] = str(customer["_id"])
     del customer['_id']
+    
     if customer.get("currentPlan") and customer["currentPlan"].get("planId"):
         customer["currentPlan"]["planId"] = str(customer["currentPlan"]["planId"])
+        
+    if customer.get("userId"):
+        customer["userId"] = str(customer["userId"])
 
     return Response({"data": customer}, status=status.HTTP_200_OK)
 
@@ -84,15 +91,48 @@ def create_customer(request):
         data = serializer.validated_data
         if customer_collection.find_one({"email": data["email"]}):
             return Response({"error": "Email already exists"}, status=400)
+            
+        # Convert userId to ObjectId if present
+        if data.get("userId"):
+            try:
+                data["userId"] = ObjectId(data["userId"])
+            except:
+                return Response({"error": "Invalid userId format"}, status=400)
 
         customer = CustomerModel(data)
         result = customer_collection.insert_one(customer.to_dict())
 
         new_customer = customer.to_dict()
-        new_customer['_id'] = str(result.inserted_id)
+        new_customer['id'] = str(result.inserted_id)
+        
+        if new_customer.get("userId"):
+            new_customer["userId"] = str(new_customer["userId"])
+            
+        if new_customer.get("currentPlan") and new_customer["currentPlan"].get("planId"):
+            new_customer["currentPlan"]["planId"] = str(new_customer["currentPlan"]["planId"])
 
         return Response({"data": new_customer}, status=201)
     return Response(serializer.errors, status=400)
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def get_customers_by_user(request, user_id):
+    _id = parse_objectid(user_id)
+    if not _id:
+        return Response({"error": "Invalid user ID"}, status=400)
+
+    customers = list(customer_collection.find({"userId": _id}).sort("createdAt", -1))
+    for c in customers:
+        c["id"] = str(c["_id"])
+        del c['_id']
+
+        if c.get("currentPlan") and c["currentPlan"].get("planId"):
+            c["currentPlan"]["planId"] = str(c["currentPlan"]["planId"])
+            
+        if c.get("userId"):
+            c["userId"] = str(c["userId"])
+
+    return Response({"data": customers}, status=status.HTTP_200_OK)
 
 
 @api_view(["PUT"])
@@ -109,9 +149,25 @@ def update_customer(request, customer_id):
     serializer = CustomerSerializer(data=request.data)
     if serializer.is_valid():
         data = serializer.validated_data
+        
+        # Convert userId to ObjectId if present
+        if data.get("userId"):
+            try:
+                data["userId"] = ObjectId(data["userId"])
+            except:
+                return Response({"error": "Invalid userId format"}, status=400)
+                
         updated_data = CustomerModel(data).to_dict()
         updated_data["updatedAt"] = datetime.datetime.now()
         customer_collection.update_one({"_id": _id}, {"$set": updated_data})
+        
+        # Convert ObjectId to string for response
+        if updated_data.get("userId"):
+            updated_data["userId"] = str(updated_data["userId"])
+            
+        if updated_data.get("currentPlan") and updated_data["currentPlan"].get("planId"):
+            updated_data["currentPlan"]["planId"] = str(updated_data["currentPlan"]["planId"])
+            
         return Response({
             "message": "Customer updated",
             "data": updated_data

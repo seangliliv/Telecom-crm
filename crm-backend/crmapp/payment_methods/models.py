@@ -5,6 +5,7 @@ from bson import ObjectId
 class PaymentMethodModel:
     def __init__(self, data):
         self.customerId = data.get("customerId")
+        self.invoiceId = ObjectId(data.get("invoiceId")) if data.get("invoiceId") else None
         self.type = data.get("type")  # "credit_card", "bank_account"
         self.cardType = data.get("cardType", None)  # "visa", "mastercard", etc.
         self.lastFour = data.get("lastFour")
@@ -16,6 +17,7 @@ class PaymentMethodModel:
     def to_dict(self):
         return {
             "customerId": self.customerId,
+            "invoiceId": self.invoiceId,
             "type": self.type,
             "cardType": self.cardType,
             "lastFour": self.lastFour,
