@@ -1,8 +1,9 @@
+import os
 from pymongo import MongoClient
 import certifi
 
 client = MongoClient(
-    "mongodb+srv://seangliliv12:XI6QsucFv0whXMTG@cluster0.nwhsmxs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
+    os.getenv("MongoClient"),
     tlsCAFile=certifi.where()
 )   
 db = client["crm-project"]

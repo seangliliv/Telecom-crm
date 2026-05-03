@@ -1,4 +1,3 @@
-# dashboard/urls.py
 from django.urls import path
 from . import views
 
@@ -7,7 +6,6 @@ urlpatterns = [
     path("dashboard/user/<str:user_id>/", views.user_dashboard, name="user_dashboard"),
 ]
 
-# dashboard/views.py
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response

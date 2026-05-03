@@ -1,4 +1,3 @@
-# support_tickets/models.py
 from datetime import datetime
 from bson import ObjectId
 
@@ -19,18 +18,15 @@ class TicketMessageModel:
 
 class SupportTicketModel:
     def __init__(self, data):
-        # Generate a ticket ID with format TK-YYYYNNN
         year = datetime.utcnow().strftime("%Y")
-        last_ticket = None  # This would need to be queried from the database
-        ticket_num = 1  # Default if no tickets exist
-        if last_ticket and last_ticket.get("ticketId"):
-            # Extract the number from the last ticket ID and increment
+        last_ticket = None   
+        ticket_num = 1   
+        if last_ticket and last_ticket.get("ticketId"):   
             try:
                 last_num = int(last_ticket.get("ticketId").split("-")[1][4:])
                 ticket_num = last_num + 1
             except:
                 pass
-        
         self.ticketId = f"TK-{year}{ticket_num:03d}"
         self.customerId = data.get("customerId")
         self.subject = data.get("subject")

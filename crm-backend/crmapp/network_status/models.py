@@ -1,4 +1,3 @@
-# network_status/models.py
 from datetime import datetime
 
 class NetworkStatusModel:

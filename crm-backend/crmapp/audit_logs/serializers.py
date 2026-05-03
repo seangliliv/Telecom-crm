@@ -1,4 +1,3 @@
-# audit_logs/serializers.py
 from rest_framework import serializers
 
 class AuditLogSerializer(serializers.Serializer):

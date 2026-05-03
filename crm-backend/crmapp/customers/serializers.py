@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-
 class AddressSerializer(serializers.Serializer):
     street = serializers.CharField(required=False, allow_blank=True)
     city = serializers.CharField(required=False, allow_blank=True)

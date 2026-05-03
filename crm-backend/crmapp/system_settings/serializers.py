@@ -1,4 +1,3 @@
-# system_settings/serializers.py
 from rest_framework import serializers
 
 class SystemSettingsSerializer(serializers.Serializer):

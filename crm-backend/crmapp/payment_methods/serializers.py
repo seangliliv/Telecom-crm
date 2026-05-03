@@ -1,4 +1,3 @@
-# payment_methods/serializers.py
 from rest_framework import serializers
 
 class PaymentMethodSerializer(serializers.Serializer):

@@ -1,4 +1,3 @@
-# network_status/serializers.py
 from rest_framework import serializers
 
 class NetworkStatusSerializer(serializers.Serializer):

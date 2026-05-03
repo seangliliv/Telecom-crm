@@ -1,4 +1,3 @@
-# system_settings/urls.py
 from django.urls import path
 from . import views
 
