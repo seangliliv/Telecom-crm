@@ -1,4 +1,3 @@
-// src/components/CustomerModal.jsx
 import { useState } from "react";
 import { X } from "lucide-react";
 
@@ -31,7 +30,6 @@ function CustomerModal({ isOpen, onClose, onCustomerAdded, plans = [] }) {
     const { name, value } = e.target;
     
     if (name.includes(".")) {
-      // Handle nested fields (like address.city)
       const [parent, child] = name.split(".");
       setFormData({
         ...formData,
@@ -41,7 +39,6 @@ function CustomerModal({ isOpen, onClose, onCustomerAdded, plans = [] }) {
         }
       });
     } else if (name === "planId") {
-      // Handle plan selection
       setFormData({
         ...formData,
         currentPlan: {
@@ -50,7 +47,6 @@ function CustomerModal({ isOpen, onClose, onCustomerAdded, plans = [] }) {
         }
       });
     } else if (name === "autoRenew") {
-      // Handle checkbox
       setFormData({
         ...formData,
         currentPlan: {
@@ -90,12 +86,8 @@ function CustomerModal({ isOpen, onClose, onCustomerAdded, plans = [] }) {
     
     try {
       setSubmitting(true);
-      
-      // Calculate dates for plan if a plan is selected
       if (formData.currentPlan.planId) {
-        // Set start date to today
         const startDate = new Date();
-        // Set end date to 3 months from now (can be adjusted based on plan details)
         const endDate = new Date();
         endDate.setMonth(endDate.getMonth() + 3);
         
@@ -130,7 +122,6 @@ function CustomerModal({ isOpen, onClose, onCustomerAdded, plans = [] }) {
 
         <form onSubmit={handleSubmit} className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {/* Personal Information */}
             <div className="col-span-2">
               <h3 className="text-lg font-medium mb-2">Personal Information</h3>
             </div>
@@ -202,7 +193,6 @@ function CustomerModal({ isOpen, onClose, onCustomerAdded, plans = [] }) {
               />
             </div>
 
-            {/* Address Information */}
             <div className="col-span-2 mt-4">
               <h3 className="text-lg font-medium mb-2">Address</h3>
             </div>
@@ -272,7 +262,6 @@ function CustomerModal({ isOpen, onClose, onCustomerAdded, plans = [] }) {
               />
             </div>
 
-            {/* Subscription Information */}
             <div className="col-span-2 mt-4">
               <h3 className="text-lg font-medium mb-2">Subscription & Status</h3>
             </div>
