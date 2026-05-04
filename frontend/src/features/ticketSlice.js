@@ -1,4 +1,3 @@
-// src/features/ticketSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { fetchTickets, createTicket } from "../api";
 
