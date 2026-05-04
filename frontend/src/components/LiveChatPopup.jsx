@@ -47,7 +47,6 @@ const LiveChatPopup = ({ isOpen, onClose }) => {
     setMessages([...messages, userMessage]);
     setNewMessage('');
     
-    // Simulate agent response after a short delay
     setTimeout(() => {
       const agentResponse = {
         id: messages.length + 2,
@@ -74,7 +73,6 @@ const LiveChatPopup = ({ isOpen, onClose }) => {
 
   return (
     <div className={`fixed bottom-6 right-6 w-96 bg-white rounded-lg shadow-xl overflow-hidden z-50 transition-all duration-200 flex flex-col ${isMinimized ? 'h-16' : 'h-96'}`}>
-      {/* Chat Header */}
       <div className="bg-blue-600 text-white p-3 flex justify-between items-center">
         <div className="flex items-center">
           <div className="bg-white rounded-full h-8 w-8 flex items-center justify-center mr-2">
@@ -103,7 +101,6 @@ const LiveChatPopup = ({ isOpen, onClose }) => {
       
       {!isMinimized && (
         <>
-          {/* Chat Messages */}
           <div className="flex-1 p-3 overflow-y-auto bg-gray-50">
             <div className="space-y-4">
               {messages.map((message) => (
@@ -138,7 +135,6 @@ const LiveChatPopup = ({ isOpen, onClose }) => {
             </div>
           </div>
           
-          {/* Chat Input */}
           <div className="p-3 border-t">
             <div className="flex items-end space-x-2">
               <div className="flex-1 bg-gray-100 rounded-lg p-2">
