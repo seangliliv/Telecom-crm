@@ -1,4 +1,3 @@
-// src/components/CustomerTable.jsx
 import React, { useState } from 'react';
 
 const CustomerTable = ({ customers }) => {
