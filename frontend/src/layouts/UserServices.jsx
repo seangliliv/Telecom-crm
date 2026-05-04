@@ -1,4 +1,3 @@
-// src/pages/user/UserServices.jsx
 import React from "react";
 
 const UserServices = () => {
