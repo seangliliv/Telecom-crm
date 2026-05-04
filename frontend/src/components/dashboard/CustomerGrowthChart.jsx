@@ -1,4 +1,3 @@
-// src/components/dashboard/CustomerGrowthChart.jsx
 import React from 'react';
 import {
   BarChart,

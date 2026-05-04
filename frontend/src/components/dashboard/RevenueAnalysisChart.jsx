@@ -1,4 +1,3 @@
-// src/components/dashboard/RevenueAnalysisChart.jsx
 import React from 'react';
 import {
   LineChart,
@@ -12,7 +11,6 @@ import {
 } from 'recharts';
 
 const RevenueAnalysisChart = ({ data }) => {
-  // Format date for display
   const formattedData = data.map(item => ({
     ...item,
     formattedDate: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
