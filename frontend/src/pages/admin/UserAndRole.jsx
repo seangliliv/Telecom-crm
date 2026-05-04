@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 
 const UserAndRole = () => {
-  // Sample user data
   const users = [
     { 
       name: 'Sophea Chen', 
@@ -21,7 +20,7 @@ const UserAndRole = () => {
       role: 'Super Admin', 
       status: 'Active',
       lastActive: '2 minutes ago',
-      avatar: 'https://randomuser.me/api/portraits/women/44.jpg'
+      avatar: '#'
     },
     { 
       name: 'Dara Kim', 
@@ -29,13 +28,12 @@ const UserAndRole = () => {
       role: 'Sales Manager', 
       status: 'Active',
       lastActive: '1 hour ago',
-      avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
+      avatar: '#'
     }
   ];
 
   return (
     <div className="p-6">
-      {/* Header Section */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">User & Role</h1>
@@ -52,8 +50,6 @@ const UserAndRole = () => {
           </button>
         </div>
       </div>
-
-      {/* User Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <UserStatsCard 
           title="Super Admins" 
@@ -81,9 +77,7 @@ const UserAndRole = () => {
         />
       </div>
 
-      {/* Users List */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        {/* Search and Filter */}
         <div className="p-4 border-b flex justify-between items-center">
           <div className="flex space-x-3">
             <input
@@ -108,7 +102,6 @@ const UserAndRole = () => {
           </div>
         </div>
 
-        {/* Users Table */}
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -167,7 +160,6 @@ const UserAndRole = () => {
           </tbody>
         </table>
 
-        {/* Pagination */}
         <div className="px-6 py-4 flex items-center justify-between border-t border-gray-200">
           <div className="text-sm text-gray-500">
             Showing 1 to 2 of 24 entries
@@ -184,8 +176,7 @@ const UserAndRole = () => {
     </div>
   );
 };
-
-// User Stats Card Component
+ 
 const UserStatsCard = ({ title, count, icon, bgColor }) => {
   return (
     <div className="bg-white rounded-lg shadow p-6">
@@ -201,8 +192,7 @@ const UserStatsCard = ({ title, count, icon, bgColor }) => {
     </div>
   );
 };
-
-// Role Badge Component
+ 
 const RoleBadge = ({ role }) => {
   let bgColor = '';
   
@@ -226,8 +216,7 @@ const RoleBadge = ({ role }) => {
     </span>
   );
 };
-
-// Status Badge Component
+ 
 const StatusBadge = ({ status }) => {
   let bgColor = '';
   
@@ -248,8 +237,7 @@ const StatusBadge = ({ status }) => {
     </span>
   );
 };
-
-// Pagination Button Component
+ 
 const PaginationButton = ({ label, active }) => {
   return (
     <button
