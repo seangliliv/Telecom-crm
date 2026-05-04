@@ -23,11 +23,9 @@ const AdminLayout = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Get user information from AuthService only once
     const userDetails = AuthService.getUserInfo();
     
     if (!userDetails) {
-      // If no user details, set loading to false to handle redirect
       setIsLoading(false);
       return;
     }
@@ -56,8 +54,6 @@ const AdminLayout = () => {
   if (!AuthService.isAuthenticated()) {
     return <Navigate to="/login" />;
   }
-
-  // Get user initials for the avatar
   const getUserInitials = () => {
     if (!userInfo || !userInfo.name) return 'AD';
     
@@ -72,14 +68,12 @@ const AdminLayout = () => {
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
       <div className="w-64 bg-[#f1f3d8] text-gray-800 flex flex-col">
-        {/* Logo */}
         <div className="p-4 border-b border-gray-200">
           <h1 className="text-xl font-bold text-[#ff6b00]">
             <span className="text-yellow-600"> </span>KH Telecom CRM
           </h1>
         </div>
         
-        {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4">
           <ul className="space-y-1">
             <NavItem to="/admin/dashboard" icon={<LayoutDashboard />} label="Dashboard" />
@@ -95,7 +89,6 @@ const AdminLayout = () => {
           </ul>
         </nav>
         
-        {/* Logout Button in Sidebar */}
         <div className="p-4 border-t border-gray-200">
           <button 
             onClick={handleLogout}
@@ -107,11 +100,8 @@ const AdminLayout = () => {
         </div>
       </div>
       
-      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Header */}
         <header className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
-          {/* Search Bar */}
           <div className="relative">
             <input
               type="text"
@@ -125,9 +115,7 @@ const AdminLayout = () => {
             </div>
           </div>
           
-          {/* Right Side */}
           <div className="flex items-center space-x-4">
-            {/* Language Selector */}
             <div className="flex items-center">
               <span className="mr-1">EN</span>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -136,15 +124,13 @@ const AdminLayout = () => {
               </svg>
             </div>
             
-            {/* Notifications */}
             <div className="relative">
               <Bell className="h-6 w-6 cursor-pointer" />
               <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
                 3
               </span>
             </div>
-            
-            {/* User Profile with Dropdown */}
+        
             <div className="relative">
               <div 
                 className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold cursor-pointer"
@@ -153,7 +139,6 @@ const AdminLayout = () => {
                 {getUserInitials()}
               </div>
               
-              {/* User Dropdown Menu */}
               {showUserMenu && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
                   <a href="/admin/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
@@ -171,7 +156,6 @@ const AdminLayout = () => {
           </div>
         </header>
         
-        {/* Page Content */}
         <main className="flex-1 overflow-y-auto bg-gray-50">
           <Outlet />
         </main>
