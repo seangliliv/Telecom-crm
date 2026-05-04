@@ -11,10 +11,7 @@ const DeleteConfirmationModal = ({ isOpen, onClose, customer, onCustomerDeleted 
     setError(null);
 
     try {
-      // Log what we're trying to delete for debugging
       console.log("Deleting customer with ID:", customer.id);
-      
-      // Try alternative API endpoint format
       await axios.delete(`${process.env.REACT_APP_API_URL}/customers/${customer.id}`, {
         headers: {
           'Content-Type': 'application/json',
@@ -28,7 +25,6 @@ const DeleteConfirmationModal = ({ isOpen, onClose, customer, onCustomerDeleted 
       onClose();
     } catch (error) {
       setLoading(false);
-      // More detailed error logging
       console.error("Error deleting customer:", error);
       console.error("Error response:", error.response?.data);
       console.error("Error status:", error.response?.status);
