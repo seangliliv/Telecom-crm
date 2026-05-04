@@ -1,4 +1,3 @@
-// src/components/EditCustomerModal.jsx
 import { useState, useEffect } from "react";
 
 function EditCustomerModal({ isOpen, onClose, customer, onCustomerUpdated }) {
@@ -13,7 +12,6 @@ function EditCustomerModal({ isOpen, onClose, customer, onCustomerUpdated }) {
   const [error, setError] = useState(null);
   const [updating, setUpdating] = useState(false);
 
-  // Update form data when customer prop changes
   useEffect(() => {
     if (customer) {
       setFormData({
@@ -41,14 +39,12 @@ function EditCustomerModal({ isOpen, onClose, customer, onCustomerUpdated }) {
     setUpdating(true);
 
     try {
-      // Ensure all required fields are filled
       if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim()) {
         setError("Please fill in all required fields (First Name, Last Name, Email)");
         setUpdating(false);
         return;
       }
 
-      // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.email)) {
         setError("Please enter a valid email address");
@@ -56,7 +52,6 @@ function EditCustomerModal({ isOpen, onClose, customer, onCustomerUpdated }) {
         return;
       }
 
-      // Call the update function from parent component
       await onCustomerUpdated(formData);
       onClose();
     } catch (err) {
@@ -74,10 +69,8 @@ function EditCustomerModal({ isOpen, onClose, customer, onCustomerUpdated }) {
           setError(`Error: ${err.response.statusText || "Unknown error"}`);
         }
       } else if (err.request) {
-        // The request was made but no response was received
         setError("Network error. Please check your connection and try again.");
       } else {
-        // Something happened in setting up the request
         setError(`Error: ${err.message || "Unknown error"}`);
       }
     } finally {
