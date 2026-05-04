@@ -10,7 +10,6 @@ const SupportTicketPopup = ({ isOpen, onClose }) => {
     attachments: []
   });
 
-  // List of ticket categories
   const categories = [
     { value: 'billing', label: 'Billing Issue' },
     { value: 'technical', label: 'Technical Problem' },
@@ -19,7 +18,6 @@ const SupportTicketPopup = ({ isOpen, onClose }) => {
     { value: 'other', label: 'Other' }
   ];
 
-  // List of priority levels
   const priorities = [
     { value: 'low', label: 'Low' },
     { value: 'medium', label: 'Medium' },
@@ -33,7 +31,6 @@ const SupportTicketPopup = ({ isOpen, onClose }) => {
   };
 
   const handleFileChange = (e) => {
-    // In a real implementation, you would handle file uploads here
     const files = Array.from(e.target.files);
     setTicketData({ 
       ...ticketData, 
@@ -49,13 +46,8 @@ const SupportTicketPopup = ({ isOpen, onClose }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Here you would submit the ticket data to your backend
     console.log('Submitting ticket:', ticketData);
-    
-    // Display success message
     alert('Ticket created successfully! Your ticket ID is TK-' + Math.floor(2025000 + Math.random() * 1000));
-    
-    // Reset form and close popup
     setTicketData({
       subject: '',
       category: 'billing',
@@ -71,7 +63,6 @@ const SupportTicketPopup = ({ isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-hidden">
-        {/* Popup Header */}
         <div className="flex justify-between items-center border-b p-4">
           <h2 className="text-lg font-semibold">Create Support Ticket</h2>
           <button 
@@ -81,11 +72,9 @@ const SupportTicketPopup = ({ isOpen, onClose }) => {
             <X className="h-5 w-5" />
           </button>
         </div>
-        
-        {/* Popup Body */}
+    
         <div className="p-4 overflow-y-auto max-h-[70vh]">
           <form onSubmit={handleSubmit}>
-            {/* Subject */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Subject*
@@ -100,8 +89,7 @@ const SupportTicketPopup = ({ isOpen, onClose }) => {
                 required
               />
             </div>
-            
-            {/* Category & Priority */}
+    
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -141,7 +129,6 @@ const SupportTicketPopup = ({ isOpen, onClose }) => {
               </div>
             </div>
             
-            {/* Description */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Description*
@@ -156,8 +143,7 @@ const SupportTicketPopup = ({ isOpen, onClose }) => {
                 required
               />
             </div>
-            
-            {/* File Attachments */}
+          
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Attachments
@@ -178,7 +164,6 @@ const SupportTicketPopup = ({ isOpen, onClose }) => {
                 </span>
               </div>
               
-              {/* Attachment List */}
               {ticketData.attachments.length > 0 && (
                 <ul className="mt-2 space-y-1">
                   {ticketData.attachments.map((file, index) => (
@@ -201,8 +186,7 @@ const SupportTicketPopup = ({ isOpen, onClose }) => {
             </div>
           </form>
         </div>
-        
-        {/* Popup Footer */}
+       
         <div className="border-t p-4 flex justify-end space-x-3">
           <button
             className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
