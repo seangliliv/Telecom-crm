@@ -1,4 +1,3 @@
-// src/components/ProtectedRoute.jsx
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import AuthService from '../utils/AuthService';
@@ -8,7 +7,6 @@ const ProtectedRoute = ({ children, userRole, allowedRole }) => {
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    // Use AuthService to check authentication status
     const isLoggedIn = AuthService.isAuthenticated();
     const storedUserRole = AuthService.getUserRole();
     
@@ -17,13 +15,11 @@ const ProtectedRoute = ({ children, userRole, allowedRole }) => {
       setIsLoading(false);
       return;
     }
-    
-    // User is authenticated
+
     setIsAuthenticated(true);
     setIsLoading(false);
   }, []);
   
-  // Show loading state
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -32,7 +28,6 @@ const ProtectedRoute = ({ children, userRole, allowedRole }) => {
     );
   }
   
-  // If not authenticated, redirect to login
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
