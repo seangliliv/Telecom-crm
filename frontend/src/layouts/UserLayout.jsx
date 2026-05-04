@@ -10,20 +10,17 @@ const UserLayout = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Get user information from AuthService
     const userDetails = AuthService.getUserInfo();
     setUserInfo(userDetails);
     setIsLoading(false);
   }, []);
 
   const handleLogout = () => {
-    // Use our AuthService to handle logout
     AuthService.logout();
     toast.success("You have been logged out");
     navigate('/login');
   };
 
-  // Show loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -34,11 +31,9 @@ const UserLayout = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation Bar */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
-            {/* Logo and navigation */}
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
                 {/* <LogoIcon className="h-8 w-8 text-orange-500" /> */}
@@ -51,7 +46,6 @@ const UserLayout = () => {
               </nav>
             </div>
             
-            {/* User Actions */}
             <div className="flex items-center">
               <div className="relative mr-4">
                 <Bell className="h-6 w-6 text-gray-500" />
@@ -73,16 +67,14 @@ const UserLayout = () => {
           </div>
         </div>
       </header>
-      
-      {/* Main Content */}
+ 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Outlet />
       </main>
     </div>
   );
 };
-
-// Navigation Item Component
+ 
 const NavItem = ({ to, label }) => {
   return (
     <NavLink
@@ -99,8 +91,7 @@ const NavItem = ({ to, label }) => {
     </NavLink>
   );
 };
-
-// Logo Icon Component
+ 
 const LogoIcon = ({ className }) => (
   <svg 
     xmlns="http://www.w3.org/2000/svg" 
