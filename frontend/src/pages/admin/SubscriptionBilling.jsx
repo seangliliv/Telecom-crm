@@ -31,7 +31,6 @@ import { fetchCustomers } from '../../services/customerApi';
 import { fetchPlans } from '../../services/plansApi';
 
 const SubscriptionBilling = () => {
-  // State for data and UI
   const [subscriptions, setSubscriptions] = useState([]);
   const [enhancedSubscriptions, setEnhancedSubscriptions] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -46,13 +45,11 @@ const SubscriptionBilling = () => {
     key: "startDate",
     direction: "descending",
   });
-
-  // Modal states
+ 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-
-  // Form data for new subscription
+ 
   const [formData, setFormData] = useState({
     customerId: "",
     planId: "",
@@ -61,16 +58,14 @@ const SubscriptionBilling = () => {
     endDate: "",
     autoRenew: true
   });
-
-  // Stats for subscription overview
+ 
   const [stats, setStats] = useState({
     totalSubscriptions: 0,
     activeSubscriptions: 0,
     expiringSoon: 0,
     revenueThisMonth: 0
   });
-
-  // Fetch all data
+ 
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -100,23 +95,18 @@ const SubscriptionBilling = () => {
       } catch (planError) {
         console.error("Error fetching plans:", planError);
       }
-
-      // Ensure we have arrays
+ 
       const safeSubsData = Array.isArray(subsData) ? subsData : [];
       const safeCustomersData = Array.isArray(cusData) ? cusData : [];
       const safePlansData = Array.isArray(planData) ? planData : [];
-
-      // Save raw data
+ 
       setSubscriptions(safeSubsData);
       setCustomers(safeCustomersData);
       setPlans(safePlansData);
-
-      // Enhance subscription data with customer and plan info
+ 
       const enhanced = safeSubsData.map(subscription => {
         const customer = safeCustomersData.find(c => c.id === subscription.customerId || c._id === subscription.customerId);
         const plan = safePlansData.find(p => p.id === subscription.planId || p._id === subscription.planId);
-
-        // Get a displayable customer ID (last 6 chars if possible)
         const shortCustomerId = subscription.customerId 
           ? (typeof subscription.customerId === 'string' && subscription.customerId.length > 6 
               ? subscription.customerId.slice(-6) 
@@ -140,14 +130,11 @@ const SubscriptionBilling = () => {
           billingCycle: plan 
             ? (plan.billingCycle || 'monthly') 
             : (subscription.billingCycle || 'monthly'),
-          // Normalize status
           status: normalizeStatus(subscription.status)
         };
       });
 
       setEnhancedSubscriptions(enhanced);
-      
-      // Calculate statistics
       calculateStats(enhanced);
       
       setLoading(false);
@@ -158,7 +145,6 @@ const SubscriptionBilling = () => {
     }
   };
 
-  // Normalize status values for consistency
   const normalizeStatus = (status) => {
     if (!status) return "Inactive";
 
@@ -195,18 +181,15 @@ const SubscriptionBilling = () => {
     return "Active";
   };
 
-  // Calculate subscription statistics
   const calculateStats = (subsData) => {
     if (!Array.isArray(subsData)) return;
 
     const total = subsData.length;
-    
-    // Count active subscriptions
+
     const active = subsData.filter(
       sub => sub.status === "Active"
     ).length;
 
-    // Count subscriptions expiring in the next 30 days
     const now = new Date();
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(now.getDate() + 30);
@@ -226,8 +209,7 @@ const SubscriptionBilling = () => {
       
       const startDate = sub.startDate ? new Date(sub.startDate) : null;
       const endDate = sub.endDate ? new Date(sub.endDate) : null;
-      
-      // Check if subscription is active this month
+
       if (startDate && 
           (startDate.getMonth() === thisMonth && startDate.getFullYear() === thisYear) ||
           (endDate && endDate.getMonth() === thisMonth && endDate.getFullYear() === thisYear) ||
@@ -247,7 +229,6 @@ const SubscriptionBilling = () => {
     });
   };
 
-  // Handle sorting
   const requestSort = (key) => {
     let direction = "ascending";
     if (sortConfig.key === key && sortConfig.direction === "ascending") {
@@ -256,7 +237,6 @@ const SubscriptionBilling = () => {
     setSortConfig({ key, direction });
   };
 
-  // Get sort indicator
   const getSortIndicator = (key) => {
     if (sortConfig.key !== key) return null;
     return sortConfig.direction === "ascending" ? (
@@ -266,16 +246,13 @@ const SubscriptionBilling = () => {
     );
   };
 
-  // Handle status filter change
   const handleStatusFilterChange = (e) => {
     setStatusFilter(e.target.value);
   };
 
-  // Filter subscriptions based on search term and status
   const filteredSubscriptions = React.useMemo(() => {
     let result = [...enhancedSubscriptions];
 
-    // Apply search filter
     if (searchTerm) {
       result = result.filter(
         (sub) =>
@@ -294,12 +271,10 @@ const SubscriptionBilling = () => {
       );
     }
 
-    // Apply status filter
     if (statusFilter !== "All") {
       result = result.filter((sub) => sub.status === statusFilter);
     }
 
-    // Apply sorting
     if (sortConfig.key) {
       result.sort((a, b) => {
         if (a[sortConfig.key] < b[sortConfig.key]) {
@@ -315,12 +290,9 @@ const SubscriptionBilling = () => {
     return result;
   }, [enhancedSubscriptions, searchTerm, statusFilter, sortConfig]);
 
-  // Create a new subscription
   const handleCreateSubscription = async () => {
     try {
       setLoading(true);
-
-      // Ensure dates are in ISO format
       const apiFormData = {
         ...formData,
         startDate: new Date(formData.startDate).toISOString(),
@@ -334,11 +306,9 @@ const SubscriptionBilling = () => {
         message: "Subscription created successfully!"
       });
 
-      // Clear form and hide modal
       resetForm();
       setShowAddModal(false);
 
-      // Refresh data
       await fetchData();
     } catch (error) {
       console.error("Error creating subscription:", error);
@@ -351,7 +321,6 @@ const SubscriptionBilling = () => {
     }
   };
 
-  // Update a subscription
   const handleUpdateSubscription = async () => {
     try {
       if (!currentSubscription || !currentSubscription.id) {
@@ -360,7 +329,6 @@ const SubscriptionBilling = () => {
 
       setLoading(true);
 
-      // Ensure dates are in ISO format
       const apiFormData = {
         ...formData,
         startDate: new Date(formData.startDate).toISOString(),
@@ -374,11 +342,9 @@ const SubscriptionBilling = () => {
         message: "Subscription updated successfully!"
       });
 
-      // Clear form and hide modal
       resetForm();
       setShowViewModal(false);
 
-      // Refresh data
       await fetchData();
     } catch (error) {
       console.error("Error updating subscription:", error);
@@ -390,8 +356,6 @@ const SubscriptionBilling = () => {
       setLoading(false);
     }
   };
-
-  // Delete a subscription
   const handleDeleteSubscription = async () => {
     try {
       if (!currentSubscription || !currentSubscription.id) {
@@ -407,10 +371,8 @@ const SubscriptionBilling = () => {
         message: "Subscription deleted successfully!"
       });
 
-      // Clear form and hide modal
       setShowDeleteModal(false);
 
-      // Refresh data
       await fetchData();
     } catch (error) {
       console.error("Error deleting subscription:", error);
@@ -423,12 +385,9 @@ const SubscriptionBilling = () => {
     }
   };
 
-  // View subscription details
   const viewSubscription = (subscription) => {
     console.log("Viewing subscription:", subscription);
     setCurrentSubscription(subscription);
-    
-    // Populate form with subscription data
     setFormData({
       customerId: subscription.customerId || "",
       planId: subscription.planId || "",
@@ -445,13 +404,11 @@ const SubscriptionBilling = () => {
     setShowViewModal(true);
   };
 
-  // Handle delete confirmation modal
   const confirmDeleteSubscription = (subscription) => {
     setCurrentSubscription(subscription);
     setShowDeleteModal(true);
   };
 
-  // Reset form data
   const resetForm = () => {
     setFormData({
       customerId: "",
@@ -464,7 +421,6 @@ const SubscriptionBilling = () => {
     setCurrentSubscription(null);
   };
 
-  // Calculate end date based on billing cycle
   const calculateEndDate = (startDate, billingCycle) => {
     if (!startDate) return "";
     
@@ -486,18 +442,16 @@ const SubscriptionBilling = () => {
         date.setFullYear(date.getFullYear() + 1);
         break;
       default:
-        date.setMonth(date.getMonth() + 1); // Default to monthly
+        date.setMonth(date.getMonth() + 1); 
     }
     
     return date.toISOString().split("T")[0];
   };
 
-  // Handle plan selection change
   const handlePlanChange = (planId) => {
     const selectedPlan = plans.find(p => p.id === planId);
     const billingCycle = selectedPlan ? selectedPlan.billingCycle || 'monthly' : 'monthly';
-    
-    // Calculate end date based on billing cycle
+
     const endDate = calculateEndDate(formData.startDate, billingCycle);
     
     setFormData({
@@ -507,7 +461,6 @@ const SubscriptionBilling = () => {
     });
   };
 
-  // Clear notification after a delay
   useEffect(() => {
     if (notification) {
       const timer = setTimeout(() => {
@@ -518,12 +471,10 @@ const SubscriptionBilling = () => {
     }
   }, [notification]);
 
-  // Initial data fetch
   useEffect(() => {
     fetchData();
   }, []);
 
-  // Formatting functions
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     
@@ -536,7 +487,6 @@ const SubscriptionBilling = () => {
 
   return (
     <div className="p-6">
-      {/* Header Section */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">Subscription Management</h1>
@@ -563,7 +513,6 @@ const SubscriptionBilling = () => {
         </div>
       </div>
 
-      {/* Notification Message */}
       {notification && (
         <div
           className={`mb-4 p-4 rounded-md ${
@@ -593,7 +542,6 @@ const SubscriptionBilling = () => {
         </div>
       )}
 
-      {/* Error message display */}
       {error && (
         <div className="mb-4 bg-yellow-50 border-l-4 border-yellow-400 p-4">
           <div className="flex">
@@ -607,7 +555,6 @@ const SubscriptionBilling = () => {
         </div>
       )}
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <StatCard
           title="Total Subscriptions"
@@ -635,7 +582,6 @@ const SubscriptionBilling = () => {
         />
       </div>
 
-      {/* Subscriptions Table Section */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="p-4 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0">
           <div className="relative">
@@ -825,7 +771,6 @@ const SubscriptionBilling = () => {
           </div>
         )}
 
-        {/* Pagination */}
         {filteredSubscriptions.length > 0 && (
           <div className="px-6 py-4 flex items-center justify-between border-t border-gray-200">
             <div className="text-sm text-gray-500">
@@ -849,7 +794,6 @@ const SubscriptionBilling = () => {
         )}
       </div>
 
-      {/* View/Edit Subscription Modal */}
       {showViewModal && currentSubscription && (
         <Modal
           title={`Subscription Details: ${currentSubscription.id ? currentSubscription.id.slice(-8) : 'New'}`}
@@ -967,7 +911,6 @@ const SubscriptionBilling = () => {
         </Modal>
       )}
 
-      {/* Add Subscription Modal */}
       {showAddModal && (
         <Modal
           title="Create New Subscription"
@@ -1088,7 +1031,6 @@ const SubscriptionBilling = () => {
         </Modal>
       )}
 
-      {/* Delete Subscription Modal */}
       {showDeleteModal && currentSubscription && (
         <Modal
           title="Delete Subscription"

@@ -1,4 +1,3 @@
-// src/pages/admin/Billing.jsx
 import { useState, useEffect } from "react";
 import { fetchInvoices, createInvoice } from "../../api";
 
@@ -22,7 +21,6 @@ const Billing = () => {
   const handleCreateInvoice = () => {
     createInvoice(newInvoice)
       .then((created) => {
-        // Refresh invoices list after creation
         setInvoices([...invoices, created]);
         setNewInvoice({ customerId: "", amount: 0 });
       })
