@@ -1,4 +1,3 @@
-// src/layouts/SuperAdminLayout.jsx
 import React, { useEffect, useState } from "react";
 import { Outlet, NavLink, useNavigate, Navigate } from "react-router-dom";
 import {
@@ -27,11 +26,9 @@ const SuperAdminLayout = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Get user information from AuthService only once
     const userDetails = AuthService.getUserInfo();
     
     if (!userDetails) {
-      // If no user details, set loading to false to handle redirect
       setIsLoading(false);
       return;
     }
@@ -41,13 +38,10 @@ const SuperAdminLayout = () => {
   }, []);
 
   const handleLogout = () => {
-    // Use our AuthService to handle logout
     AuthService.logout();
     toast.success("Logged out successfully");
     navigate("/login");
   };
-
-  // Show loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -56,12 +50,10 @@ const SuperAdminLayout = () => {
     );
   }
 
-  // If not authenticated or not a superadmin, redirect to login
   if (!AuthService.isAuthenticated() || (userInfo && userInfo.role !== 'superadmin')) {
     return <Navigate to="/login" />;
   }
 
-  // Get user initials for the avatar
   const getInitials = () => {
     if (!userInfo || !userInfo.name) return 'SA';
     
@@ -74,16 +66,13 @@ const SuperAdminLayout = () => {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
       <div className="w-64 bg-[#0f172a] text-white flex flex-col">
-        {/* Logo */}
         <div className="p-4 border-b border-gray-800">
           <h1 className="text-xl font-bold text-[#ff6b00]">
             <span className="text-red-500">S</span>uper Admin CRM
           </h1>
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4">
           <ul className="space-y-1">
             <NavItem
@@ -157,9 +146,7 @@ const SuperAdminLayout = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Header */}
         <header className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
-          {/* Search Bar */}
           <div className="relative">
             <input
               type="text"
@@ -184,9 +171,7 @@ const SuperAdminLayout = () => {
             </div>
           </div>
 
-          {/* Right Side */}
           <div className="flex items-center space-x-4">
-            {/* Language Selector */}
             <div className="flex items-center">
               <span className="mr-1">EN</span>
               <svg
@@ -208,20 +193,16 @@ const SuperAdminLayout = () => {
               </svg>
             </div>
 
-            {/* Notifications */}
             <div className="relative">
               <Bell className="h-6 w-6 cursor-pointer" />
               <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
                 5
               </span>
             </div>
-
-            {/* User Profile */}
             <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center text-white font-bold">
               {getInitials()}
             </div>
 
-            {/* Logout Button */}
             <button
               onClick={handleLogout}
               className="flex items-center text-gray-600 hover:text-red-500"
@@ -231,8 +212,6 @@ const SuperAdminLayout = () => {
             </button>
           </div>
         </header>
-
-        {/* Page Content */}
         <main className="flex-1 overflow-y-auto bg-gray-50">
           <Outlet />
         </main>
