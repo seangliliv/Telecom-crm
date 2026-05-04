@@ -11,10 +11,7 @@ import {
 import AuthService from '../../utils/AuthService';
 
 const AdminDashboard = () => {
-  // User info state
   const [userData, setUserData] = useState(null);
-  
-  // State for storing API data
   const [customers, setCustomers] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
   const [invoices, setInvoices] = useState([]);
@@ -23,13 +20,12 @@ const AdminDashboard = () => {
    
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [timeRange, setTimeRange] = useState('7'); // Default to 7 days
+  const [timeRange, setTimeRange] = useState('7');
   const [chartData, setChartData] = useState({
     customerGrowth: [],
     revenueAnalysis: []
   });
 
-  // Get user data from AuthService
   useEffect(() => {
     const userInfo = AuthService.getUserInfo();
     setUserData(userInfo);
@@ -40,8 +36,6 @@ const AdminDashboard = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        
-        // Create an array of fetch promises with error handling for each
         const fetchPromises = [
           fetchCustomers().catch(err => {
             console.error('Error fetching customers:', err);
@@ -68,20 +62,15 @@ const AdminDashboard = () => {
             return [];
           })
         ];
-        
-        // Fetch all required data in parallel with error handling
+
         const [customersData, subscriptionsData, invoicesData, issuesData, plansData ] = 
           await Promise.all(fetchPromises);
-        
-        // Ensure we're setting valid arrays to state
+      
         setCustomers(Array.isArray(customersData) ? customersData : []);
         setSubscriptions(Array.isArray(subscriptionsData) ? subscriptionsData : []);
         setInvoices(Array.isArray(invoicesData) ? invoicesData : []);
         setIssues(Array.isArray(issuesData) ? issuesData : []);
         setPlans(Array.isArray(plansData) ? plansData : []);
-        
-        
-        // Generate chart data with valid arrays
         generateChartData(
           Array.isArray(customersData) ? customersData : [], 
           Array.isArray(invoicesData) ? invoicesData : [], 
@@ -100,33 +89,26 @@ const AdminDashboard = () => {
     fetchDashboardData();
   }, [timeRange]);
 
-  // Generate chart data based on time range
   const generateChartData = (customersData, invoicesData, range) => {
     try {
-      const days = parseInt(range) || 7; // Default to 7 days if parsing fails
+      const days = parseInt(range) || 7; 
       const now = new Date();
       const startDate = new Date();
       startDate.setDate(now.getDate() - days);
-      
-      // Customer growth chart data
       const customerGrowthData = [];
       for (let i = 0; i <= days; i++) {
         const date = new Date(startDate);
         date.setDate(date.getDate() + i);
         const dateStr = date.toISOString().split('T')[0];
-        
-        // Safely count customers for this day
         let customersOnDay = 0;
         if (Array.isArray(customersData)) {
           customersOnDay = customersData.filter(customer => {
             if (!customer || !customer.created_at) return false;
             try {
               const customerDate = new Date(customer.created_at);
-              // Check if the date is valid before using toISOString
               if (isNaN(customerDate.getTime())) return false;
               return customerDate.toISOString().split('T')[0] === dateStr;
             } catch (err) {
-              // Skip this customer if date processing fails
               return false;
             }
           }).length;
@@ -137,15 +119,11 @@ const AdminDashboard = () => {
           count: customersOnDay
         });
       }
-      
-      // Revenue analysis chart data
       const revenueData = [];
       for (let i = 0; i <= days; i++) {
         const date = new Date(startDate);
         date.setDate(date.getDate() + i);
         const dateStr = date.toISOString().split('T')[0];
-        
-        // Safely calculate revenue for this day
         let revenueOnDay = 0;
         if (Array.isArray(invoicesData)) {
           revenueOnDay = invoicesData
@@ -156,11 +134,9 @@ const AdminDashboard = () => {
                 if (!dateToUse) return false;
                 
                 const invoiceDate = new Date(dateToUse);
-                // Check if the date is valid before using toISOString
                 if (isNaN(invoiceDate.getTime())) return false;
                 return invoiceDate.toISOString().split('T')[0] === dateStr;
               } catch (err) {
-                // Skip this invoice if date processing fails
                 return false;
               }
             })
@@ -182,18 +158,14 @@ const AdminDashboard = () => {
       });
     } catch (err) {
       console.error('Error generating chart data:', err);
-      // Set empty chart data in case of error
       setChartData({
         customerGrowth: [],
         revenueAnalysis: []
       });
     }
   };
-
-  // Calculate dashboard metrics
   const calculateMetrics = () => {
     try {
-      // Calculate total revenue from invoices
       const totalRevenue = Array.isArray(invoices)
         ? invoices.reduce((sum, invoice) => {
             if (!invoice) return sum;
@@ -201,8 +173,7 @@ const AdminDashboard = () => {
             return sum + amount;
           }, 0)
         : 0;
-      
-      // Calculate active plans count
+
       const activePlansCount = Array.isArray(plans)
         ? plans.filter(plan => plan && (
             plan.status === 'active' || 
@@ -213,7 +184,6 @@ const AdminDashboard = () => {
           )).length
         : 0;
       
-      // Calculate pending payments
       const pendingPayments = Array.isArray(invoices)
         ? invoices.filter(invoice => 
             invoice && (
@@ -224,8 +194,7 @@ const AdminDashboard = () => {
             )
           ).length
         : 0;
-      
-      // Calculate new subscriptions (last 30 days)
+ 
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
@@ -243,8 +212,7 @@ const AdminDashboard = () => {
             }
           }).length
         : 0;
-      
-      // Calculate critical issues
+   
       const criticalIssues = Array.isArray(issues)
         ? issues.filter(issue => 
             issue && (
@@ -255,8 +223,7 @@ const AdminDashboard = () => {
             )
           ).length
         : 0;
-      
-      // Calculate total open issues
+    
       const openIssues = Array.isArray(issues)
         ? issues.filter(issue => 
             issue && (
@@ -268,7 +235,6 @@ const AdminDashboard = () => {
           ).length
         : 0;
 
-      // Calculate average plan cost
       const avgPlanCost = Array.isArray(plans) && plans.length > 0
         ? plans.reduce((sum, plan) => {
             if (!plan) return sum;
@@ -290,7 +256,6 @@ const AdminDashboard = () => {
       };
     } catch (err) {
       console.error('Error calculating metrics:', err);
-      // Return default metrics in case of error
       return {
         totalRevenue: 0,
         activePlansCount: 0,
@@ -306,20 +271,15 @@ const AdminDashboard = () => {
   };
 
   const metrics = calculateMetrics();
-
-  // Handle time range change for charts
   const handleTimeRangeChange = (e) => {
     const newRange = e.target.value;
     setTimeRange(newRange);
     generateChartData(customers, invoices, newRange);
   };
 
-  // Function to format currency
   const formatCurrency = (amount) => {
     return `$${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
-
-  // Loading state
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center h-screen">
@@ -331,7 +291,6 @@ const AdminDashboard = () => {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="p-6">
@@ -342,14 +301,12 @@ const AdminDashboard = () => {
       </div>
     );
   }
-
-  // Get recent activities from various data sources
+  
   const getRecentActivities = () => {
     try {
-      // Add new customers (recent)
       const recentCustomers = Array.isArray(customers) && customers.length > 0
         ? [...customers]
-            .filter(customer => customer) // Filter out null/undefined
+            .filter(customer => customer) 
             .sort((a, b) => {
               const dateA = a.created_at ? new Date(a.created_at) : new Date(0);
               const dateB = b.created_at ? new Date(b.created_at) : new Date(0);
@@ -366,8 +323,7 @@ const AdminDashboard = () => {
               dateObj: customer.created_at ? new Date(customer.created_at) : new Date(0)
             }))
         : [];
-      
-      // Add recent payments
+    
       const recentPayments = Array.isArray(invoices) && invoices.length > 0
         ? [...invoices]
             .filter(invoice => invoice && invoice.amount) // Filter out null/undefined or zero amount
@@ -378,7 +334,6 @@ const AdminDashboard = () => {
             })
             .slice(0, 2)
             .map(invoice => {
-              // Safe customer lookup
               let customerName = `Customer #${invoice.customerId || invoice.customer_id || 'Unknown'}`;
               
               if (Array.isArray(customers)) {
@@ -402,8 +357,7 @@ const AdminDashboard = () => {
               };
             })
         : [];
-      
-      // Add recent issues
+  
       const recentIssues = Array.isArray(issues) && issues.length > 0
         ? [...issues]
             .filter(issue => issue && (issue.status === 'open' || issue.status === 'Open'))
@@ -414,7 +368,6 @@ const AdminDashboard = () => {
             })
             .slice(0, 1)
             .map(issue => {
-              // Safe customer lookup
               let customerName = `Customer #${issue.customerId || issue.customer_id || 'Unknown'}`;
               
               if (Array.isArray(customers)) {
@@ -438,38 +391,33 @@ const AdminDashboard = () => {
               };
             })
         : [];
-      
-      // Combine and sort all activities
+   
       return [...recentCustomers, ...recentPayments, ...recentIssues]
         .sort((a, b) => b.dateObj - a.dateObj)
         .slice(0, 5);
     } catch (err) {
       console.error('Error generating recent activities:', err);
-      return []; // Return empty array in case of error
+      return [];  
     }
   };
-
-  // Helper function to format time ago
+ 
   const getTimeAgo = (timestamp) => {
     if (!timestamp) return "Unknown time";
     
     try {
       const now = new Date();
       const past = new Date(timestamp);
-      
-      // Check if the date is valid
       if (isNaN(past.getTime())) {
         return "Unknown time";
       }
       
-      const diffMs = Math.max(0, now - past); // Ensure non-negative
-      
+      const diffMs = Math.max(0, now - past);  
       const diffMins = Math.floor(diffMs / (1000 * 60));
       const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
       
       if (diffMins < 60) {
-        return `${Math.max(1, diffMins)} mins ago`; // At least 1 minute
+        return `${Math.max(1, diffMins)} mins ago`;  
       } else if (diffHours < 24) {
         return `${diffHours} hours ago`;
       } else {
@@ -524,8 +472,7 @@ const AdminDashboard = () => {
           subtitleColor="text-purple-500"
         />
       </div>
-
-      {/* Open Tickets Card */}
+ 
       <div className="bg-white rounded-lg shadow p-4 mb-6">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-lg font-semibold">Open Tickets</h2>
@@ -539,7 +486,6 @@ const AdminDashboard = () => {
         <div className="text-sm text-red-500">{metrics.criticalIssues} critical</div>
       </div>
 
-      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div className="bg-white rounded-lg shadow p-4">
           <div className="flex justify-between items-center mb-4">
@@ -557,7 +503,6 @@ const AdminDashboard = () => {
           <div className="h-64 flex items-center justify-center bg-gray-50">
             {chartData.customerGrowth.length > 0 ? (
               <div className="w-full h-full">
-                {/* Chart would render here - placeholder for now */}
                 <div className="flex flex-col h-full justify-center items-center">
                   <BarChart3 className="h-16 w-16 text-blue-300" />
                   <span className="mt-2 text-gray-500">Customer Growth Chart</span>
@@ -589,7 +534,6 @@ const AdminDashboard = () => {
           <div className="h-64 flex items-center justify-center bg-gray-50">
             {chartData.revenueAnalysis.length > 0 ? (
               <div className="w-full h-full">
-                {/* Chart would render here - placeholder for now */}
                 <div className="flex flex-col h-full justify-center items-center">
                   <TrendingUp className="h-16 w-16 text-green-300" />
                   <span className="mt-2 text-gray-500">Revenue Analysis Chart</span>
@@ -606,7 +550,6 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Recent Activities */}
       <div className="bg-white rounded-lg shadow p-4">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Recent Activities</h2>
