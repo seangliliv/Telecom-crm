@@ -1,4 +1,3 @@
-// src/components/DeleteConfirmationModal.jsx
 import { useState } from "react";
 import { X, AlertTriangle } from "lucide-react";
 
