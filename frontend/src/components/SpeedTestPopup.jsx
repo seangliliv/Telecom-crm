@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Activity, Download, Upload, Clock } from 'lucide-react';
 
 const SpeedTestPopup = ({ isOpen, onClose }) => {
-  const [testStatus, setTestStatus] = useState('idle'); // idle, testing, completed
+  const [testStatus, setTestStatus] = useState('idle'); 
   const [results, setResults] = useState({
     download: 0,
     upload: 0,
@@ -11,7 +11,6 @@ const SpeedTestPopup = ({ isOpen, onClose }) => {
   
   useEffect(() => {
     if (isOpen && testStatus === 'idle') {
-      // Reset results when opening
       setResults({
         download: 0,
         upload: 0,
@@ -22,12 +21,8 @@ const SpeedTestPopup = ({ isOpen, onClose }) => {
   
   const startTest = () => {
     setTestStatus('testing');
-    
-    // Simulate ping test
     setTimeout(() => {
       setResults(prev => ({ ...prev, ping: 24 }));
-      
-      // Simulate download test
       let downloadProgress = 0;
       const downloadInterval = setInterval(() => {
         downloadProgress += 10;
@@ -35,8 +30,6 @@ const SpeedTestPopup = ({ isOpen, onClose }) => {
         
         if (downloadProgress >= 85) {
           clearInterval(downloadInterval);
-          
-          // Simulate upload test
           let uploadProgress = 0;
           const uploadInterval = setInterval(() => {
             uploadProgress += 8;
@@ -66,7 +59,6 @@ const SpeedTestPopup = ({ isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
-        {/* Header */}
         <div className="p-4 border-b flex justify-between items-center">
           <div className="flex items-center">
             <Activity className="h-5 w-5 text-purple-600 mr-2" />
@@ -76,8 +68,7 @@ const SpeedTestPopup = ({ isOpen, onClose }) => {
             <X className="h-5 w-5" />
           </button>
         </div>
-        
-        {/* Content */}
+    
         <div className="p-6">
           {testStatus === 'idle' && (
             <div className="text-center">
@@ -209,7 +200,6 @@ const SpeedTestPopup = ({ isOpen, onClose }) => {
   );
 };
 
-// CheckIcon Component for completed state
 const CheckIcon = ({ className }) => (
   <svg 
     xmlns="http://www.w3.org/2000/svg" 
