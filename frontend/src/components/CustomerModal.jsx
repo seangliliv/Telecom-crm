@@ -29,7 +29,7 @@ const CustomerModal = ({ isOpen, onClose, onCustomerAdded }) => {
     setError(null);
 
     try {
-      const response = await axios.post("http://45.150.128.165:8000/api/customers/", formData, {
+      const response = await axios.post(process.env.REACT_APP_API_URL, formData, {
         headers: {
           'Content-Type': 'application/json',
           'token': process.env.REACT_APP_API_TOKEN,

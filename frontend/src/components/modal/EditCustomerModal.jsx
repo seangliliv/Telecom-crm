@@ -60,7 +60,6 @@ function EditCustomerModal({ isOpen, onClose, customer, onCustomerUpdated, plans
     const { name, value } = e.target;
     
     if (name.includes(".")) {
-      // Handle nested fields (like address.city)
       const [parent, child] = name.split(".");
       setFormData({
         ...formData,
@@ -70,7 +69,6 @@ function EditCustomerModal({ isOpen, onClose, customer, onCustomerUpdated, plans
         }
       });
     } else if (name === "planId") {
-      // Handle plan selection
       setFormData({
         ...formData,
         currentPlan: {
@@ -79,7 +77,6 @@ function EditCustomerModal({ isOpen, onClose, customer, onCustomerUpdated, plans
         }
       });
     } else if (name === "autoRenew") {
-      // Handle checkbox
       setFormData({
         ...formData,
         currentPlan: {
@@ -127,7 +124,6 @@ function EditCustomerModal({ isOpen, onClose, customer, onCustomerUpdated, plans
     }
   };
 
-  // Format date for input fields
   const formatDateForInput = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
@@ -152,7 +148,6 @@ function EditCustomerModal({ isOpen, onClose, customer, onCustomerUpdated, plans
 
         <form onSubmit={handleSubmit} className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {/* Personal Information */}
             <div className="col-span-2">
               <h3 className="text-lg font-medium mb-2">Personal Information</h3>
             </div>
@@ -224,7 +219,6 @@ function EditCustomerModal({ isOpen, onClose, customer, onCustomerUpdated, plans
               />
             </div>
 
-            {/* Address Information */}
             <div className="col-span-2 mt-4">
               <h3 className="text-lg font-medium mb-2">Address</h3>
             </div>
@@ -294,7 +288,6 @@ function EditCustomerModal({ isOpen, onClose, customer, onCustomerUpdated, plans
               />
             </div>
 
-            {/* Subscription Information */}
             <div className="col-span-2 mt-4">
               <h3 className="text-lg font-medium mb-2">Subscription & Status</h3>
             </div>

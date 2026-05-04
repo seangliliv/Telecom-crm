@@ -15,10 +15,10 @@ const DeleteConfirmationModal = ({ isOpen, onClose, customer, onCustomerDeleted 
       console.log("Deleting customer with ID:", customer.id);
       
       // Try alternative API endpoint format
-      await axios.delete(`http://45.150.128.165:8000/api/customers`, {
+      await axios.delete(`${process.env.REACT_APP_API_URL}/customers/${customer.id}`, {
         headers: {
           'Content-Type': 'application/json',
-          'token': "24ad193a650d5a824asdasdfsa9d84ffasdfasdf212ab43993",
+          'token': process.env.REACT_APP_API_TOKEN,
         },
         data: { id: customer.id }  // Send ID in request body
       });
