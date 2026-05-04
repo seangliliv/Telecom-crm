@@ -1,8 +1,6 @@
-// src/features/customerSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { fetchCustomers } from '../api';
 
-// Async thunk to fetch customers
 export const getCustomers = createAsyncThunk(
   'customers/getCustomers',
   async (_, { rejectWithValue }) => {
@@ -10,7 +8,6 @@ export const getCustomers = createAsyncThunk(
       const data = await fetchCustomers();
       return data;
     } catch (error) {
-      // Capture and pass a useful error message
       return rejectWithValue(error.response?.data || error.message);
     }
   }
@@ -24,7 +21,6 @@ const customerSlice = createSlice({
     error: null,
   },
   reducers: {
-    // You can define synchronous reducers here if needed
   },
   extraReducers: (builder) => {
     builder
