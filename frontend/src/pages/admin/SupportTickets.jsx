@@ -7,42 +7,36 @@ const SupportTickets = () => {
   const [loading, setLoading] = useState(true);
   const [newTicket, setNewTicket] = useState({ customerId: "", issue: "" });
 
-  // Sample ticket stats
   const ticketStats = {
     open: { count: 42, change: "+12% from last week" },
     pending: { count: 27, change: "+5% from last week" },
     closed: { count: 156, change: "+18% from last week" }
   };
-
-  // Sample live support data
   const liveSupport = {
     agents: [
-      { name: "Vannak Pen", avatar: "https://randomuser.me/api/portraits/men/32.jpg", activeChats: 3 },
-      { name: "Bopha Ly", avatar: "https://randomuser.me/api/portraits/women/44.jpg", activeChats: 2 }
+      { name: "Mo Mo", avatar: "#", activeChats: 3 },
+      { name: "Bo Ly", avatar: "#", activeChats: 2 }
     ]
   };
 
-  // Sample AI assistant stats
   const aiStats = {
     status: "Active & Learning",
     queriesHandled: 247,
     successRate: "89%"
   };
-
-  // Sample SLA data
+ 
   const slaData = {
-    firstResponseTime: { status: "On Track", value: 80 }, // percentage for progress bar
-    resolutionTime: { status: "At Risk", value: 60 } // percentage for progress bar
+    firstResponseTime: { status: "On Track", value: 80 },  
+    resolutionTime: { status: "At Risk", value: 60 }  
   };
-
-  // Sample ticket data
+ 
   const sampleTickets = [
     {
       id: "TK-2024",
       title: "Network Connectivity Issue",
       description: "Customer reporting complete network outage in Phnom Penh area...",
       priority: "High Priority",
-      assignedTo: { name: "Sokha Chea", avatar: "https://randomuser.me/api/portraits/men/32.jpg" },
+      assignedTo: { name: "SU SU", avatar: "#" },
       timeAgo: "2 hours ago"
     },
     {
@@ -50,7 +44,7 @@ const SupportTickets = () => {
       title: "Billing Inquiry",
       description: "Customer requesting clarification on recent charges...",
       priority: "Medium Priority",
-      assignedTo: { name: "Dara Kim", avatar: "https://randomuser.me/api/portraits/women/44.jpg" },
+      assignedTo: { name: "Mo Zo", avatar: "#" },
       timeAgo: "4 hours ago"
     }
   ];
@@ -77,7 +71,6 @@ const SupportTickets = () => {
   const handleCreateTicket = () => {
     createTicket(newTicket)
       .then((created) => {
-        // Refresh tickets list after creation
         setTickets([...tickets, created]);
         setNewTicket({ customerId: "", issue: "" });
       })
@@ -109,13 +102,10 @@ const SupportTickets = () => {
 
   return (
     <div className="p-6">
-      {/* Header Section */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Support Tickets</h1>
         <p className="text-gray-600">Help ensure that customer issues and service requests</p>
       </div>
-
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <StatCard 
           title="Open Tickets" 
@@ -140,9 +130,7 @@ const SupportTickets = () => {
         />
       </div>
 
-      {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Tickets Section - 2/3 width on large screens */}
         <div className="lg:col-span-2">
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <div className="p-4 border-b flex justify-between items-center">
@@ -191,10 +179,7 @@ const SupportTickets = () => {
             </div>
           </div>
         </div>
-
-        {/* Right Sidebar - 1/3 width on large screens */}
         <div className="space-y-6">
-          {/* Live Support Section */}
           <div className="bg-white rounded-lg shadow p-4">
             <h2 className="text-lg font-semibold mb-4">Live Support</h2>
             <div className="mb-3">
@@ -225,7 +210,6 @@ const SupportTickets = () => {
             </div>
           </div>
 
-          {/* AI Assistant Status */}
           <div className="bg-white rounded-lg shadow p-4">
             <h2 className="text-lg font-semibold mb-4">AI Assistant Status</h2>
             <div className="flex items-center mb-4">
@@ -249,7 +233,6 @@ const SupportTickets = () => {
             </div>
           </div>
 
-          {/* SLA Performance */}
           <div className="bg-white rounded-lg shadow p-4">
             <h2 className="text-lg font-semibold mb-4">SLA Performance</h2>
             <div className="space-y-4">
