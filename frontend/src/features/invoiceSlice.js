@@ -1,4 +1,3 @@
-// src/features/invoiceSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { fetchInvoices, createInvoice } from "../api";
 
