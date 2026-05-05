@@ -1,4 +1,3 @@
-// src/pages/super-admin/AuditLogs.jsx
 import React, { useState } from 'react';
 import { 
   Calendar, 
@@ -95,11 +94,9 @@ const AuditLogs = () => {
       <ChevronDown className="h-4 w-4" />;
   };
 
-  // Apply filters and sorting
   const filteredAndSortedLogs = React.useMemo(() => {
     let filteredLogs = [...logs];
-    
-    // Apply search filter
+ 
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
       filteredLogs = filteredLogs.filter(log => 
@@ -108,13 +105,11 @@ const AuditLogs = () => {
         log.details.toLowerCase().includes(lowerSearchTerm)
       );
     }
-    
-    // Apply severity filter
+
     if (selectedSeverity !== 'all') {
       filteredLogs = filteredLogs.filter(log => log.severity === selectedSeverity);
     }
-    
-    // Apply date range filter
+ 
     if (dateRange.start) {
       filteredLogs = filteredLogs.filter(log => 
         new Date(log.timestamp) >= new Date(dateRange.start)
@@ -126,8 +121,7 @@ const AuditLogs = () => {
         new Date(log.timestamp) <= new Date(`${dateRange.end}T23:59:59`)
       );
     }
-    
-    // Apply sorting
+
     if (sortConfig.key) {
       filteredLogs.sort((a, b) => {
         if (a[sortConfig.key] < b[sortConfig.key]) {
@@ -143,13 +137,11 @@ const AuditLogs = () => {
     return filteredLogs;
   }, [logs, searchTerm, selectedSeverity, dateRange, sortConfig]);
 
-  // Format timestamp for display
   const formatTimestamp = (timestamp) => {
     const date = new Date(timestamp);
     return date.toLocaleString();
   };
 
-  // Toggle expanded log details
   const toggleLogDetails = (logId) => {
     if (expandedLogId === logId) {
       setExpandedLogId(null);
@@ -158,7 +150,6 @@ const AuditLogs = () => {
     }
   };
 
-  // Get icon for log action
   const getActionIcon = (action) => {
     switch(action) {
       case 'User Update':
@@ -176,7 +167,6 @@ const AuditLogs = () => {
     }
   };
 
-  // Get color for severity
   const getSeverityColor = (severity) => {
     switch(severity) {
       case 'critical':
@@ -205,10 +195,8 @@ const AuditLogs = () => {
         </button>
       </div>
 
-      {/* Filters */}
       <div className="bg-white rounded-lg shadow p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Search */}
           <div className="relative">
             <input
               type="text"
@@ -221,8 +209,7 @@ const AuditLogs = () => {
               <Search className="h-5 w-5" />
             </div>
           </div>
-          
-          {/* Date Range */}
+
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Start Date</label>
@@ -253,8 +240,7 @@ const AuditLogs = () => {
               </div>
             </div>
           </div>
-          
-          {/* Severity Filter */}
+ 
           <div className="flex space-x-2">
             <select
               value={selectedSeverity}
@@ -273,8 +259,7 @@ const AuditLogs = () => {
           </div>
         </div>
       </div>
-
-      {/* Logs Table */}
+ 
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
